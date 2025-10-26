@@ -1,0 +1,23 @@
+
+
+services:
+  app:
+    container_name: agendamentos-app
+    build:
+      context: . 
+      dockerfile: Dockerfile
+    image: agendamentos-app:dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - agendamentos-net
+
+networks:
+  agendamentos-net:
+    driver: bridge
