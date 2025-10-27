@@ -1,33 +1,46 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { MedicosService } from './medicos.service';
-import { Medico } from './medico.entity';
+import { CreateMedicoDto } from './dto/create-medico.dto';
+import { UpdateMedicoDto } from './dto/update-medico.dto';
 
 @Controller('medicos')
 export class MedicosController {
-    constructor(private readonly service: MedicosService) { }
+  constructor(private readonly medicosService: MedicosService) {}
+  @Post()
+  create(@Body() createMedicoDto: CreateMedicoDto) {
+    return this.medicosService.create(createMedicoDto);
+  }
 
-    @Get()
-    findAll(): Promise<Medico[]> {
-        return this.service.findAll();
-    }
+  @Get()
+  findAll() {
+    return this.medicosService.findAll();
+  }
 
-    @Get(':id')
-    findOne(@Param('id') id: number): Promise<Medico | null> {
-        return this.service.findOne(id);
-    }
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.medicosService.findOne(id);
+  }
 
-    @Post()
-    create(@Body() data: Partial<Medico>) {
-        return this.service.create(data);
-    }
+  @Patch(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateMedicoDto: UpdateMedicoDto,
+  ) {
+    return this.medicosService.update(id, updateMedicoDto);
+  }
 
-    @Put(':id')
-    update(@Param('id') id: number, @Body() data: Partial<Medico>) {
-        return this.service.update(id, data);
-    }
-
-    @Delete(':id')
-    remove(@Param('id') id: number) {
-        return this.service.remove(id);
-    }
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.medicosService.remove(id);
+  }
 }

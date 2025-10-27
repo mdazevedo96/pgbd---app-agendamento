@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { MedicosModule } from './medicos/medicos.module';
+import { UsuariosModule } from './usuarios/usuarios.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { MedicosModule } from './medicos/medicos.module';
       synchronize: true,
     }),
     MedicosModule,
+    UsuariosModule,
+    AuthModule,
   ],
 })
 export class AppModule { }
