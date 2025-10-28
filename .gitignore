@@ -1,0 +1,34 @@
+# Pastas de dependência
+# Ignora a /node_modules da raiz E a /frontend/node_modules
+node_modules/
+
+# Cache, build e tipos do Next.js (que estão dentro do /frontend)
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/next-env.d.ts
+frontend/*.tsbuildinfo
+
+# testing
+coverage/
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Arquivos de ambiente (NUNCA ENVIE SUAS SENHAS!)
+.env*
+
+# vercel
+.vercel

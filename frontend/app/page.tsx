@@ -1,107 +1,126 @@
+// Em: app/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useState } from "react";
+// O import do Link não é mais necessário aqui, já que o removemos
+import { useRouter } from "next/navigation";
+import PageLayout from "@/components/PageLayout"; // Importa o layout padrão
 
-// ✅ Importa a API real e o tipo Profissional
-import { getProfissionais, type Profissional } from "@/libs/api";
+export default function LoginPage() {
+  const router = useRouter();
+  const [cpf, setCpf] = useState(""); 
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-export default function HomePage() {
-  const [profissionais, setProfissionais] = useState<Profissional[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
 
-  // 🔹 Busca os dados da API NestJS ao montar o componente
-  useEffect(() => {
-    getProfissionais()
-      .then((data) => {
-        setProfissionais(data);
-      })
-      .catch((err) => {
-        console.error("Erro ao buscar médicos:", err);
-        setErro("Não foi possível carregar os profissionais. Tente novamente.");
-      })
-      .finally(() => {
-        setCarregando(false);
-      });
-  }, []);
+    try {
+      // Simulação de login
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      // A simulação ainda só verifica a senha. 
+      // O CPF não importa (por enquanto).
+      if (password === "12345") {
+        console.log("Login simulado com sucesso para o CPF:", cpf);
+        router.push("/home"); // Redireciona para a lista de profissionais
+      } else {
+        setError("CPF ou senha inválidos."); // Mensagem de erro atualizada
+      }
+    } catch (err) {
+      setError("Ocorreu um erro ao tentar fazer login. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // 2. USE O LAYOUT
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* --- Seção Hero --- */}
-      <section className="bg-gradient-to-r from-blue-600 to-teal-500 text-white text-center p-16 md:p-24">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          Agende sua Consulta
-        </h1>
-        <p className="text-lg md:text-xl mb-8 opacity-90">
-          Encontre os melhores profissionais de forma rápida, fácil e online.
-        </p>
-        <a
-          href="#profissionais"
-          className="bg-white text-blue-600 font-bold py-3 px-8 rounded-full text-lg hover:bg-gray-100 transition duration-300"
-        >
-          Ver Profissionais
-        </a>
-      </section>
-
-      {/* --- Seção de Profissionais --- */}
-      <section id="profissionais" className="max-w-6xl mx-auto py-16 px-4">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-          Nossos Profissionais
-        </h2>
-
-        {/* 🔹 Estado de erro */}
-        {erro && (
-          <p className="text-center text-red-600 mb-8">{erro}</p>
-        )}
-
-        {/* 🔹 Estado de carregamento */}
-        {carregando ? (
-          <div className="text-center text-gray-600">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-            <p className="mt-2">Carregando...</p>
+    <PageLayout
+      title="Acesse sua Conta"
+      subtitle="Use seu CPF e senha para gerenciar seus agendamentos." // Subtítulo atualizado
+    >
+      {/* O 'children' do PageLayout é o card do formulário */}
+      <div className="bg-white dark:bg-gray-800 shadow-xl rounded-xl p-8 w-full max-w-md mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* Campo de CPF */}
+          <div>
+            <label
+              htmlFor="cpf"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              CPF
+            </label>
+            <input
+              id="cpf"
+              name="cpf"
+              type="text" 
+              required
+              value={cpf}
+              onChange={(e) => setCpf(e.target.value)}
+              disabled={loading}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 disabled:opacity-50"
+              placeholder="000.000.000-00" 
+            />
           </div>
-        ) : (
-          // 🔹 Grid de cards
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {profissionais.length === 0 ? (
-              <p className="text-center text-gray-500 col-span-full">
-                Nenhum profissional cadastrado ainda.
-              </p>
-            ) : (
-              profissionais.map((prof) => (
-                <Link
-                  key={prof.id}
-                  href={`/profissionais/${prof.id}`}
-                  className="group"
-                >
-                  <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                    <Image
-                      src={prof.fotoUrl || "/default-doctor.png"} // imagem padrão
-                      alt={`Foto de ${prof.nome}`}
-                      width={400}
-                      height={300}
-                      className="w-full h-56 object-cover"
-                    />
-                    <div className="p-6">
-                      <h3 className="text-2xl font-semibold text-gray-900">
-                        {prof.nome}
-                      </h3>
-                      <p className="text-blue-600 font-medium">
-                        {prof.especialidade}
-                      </p>
-                      <div className="text-right mt-4 text-blue-500 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                        Agendar →
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
+
+          {/* Campo de Senha */}
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Senha
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 disabled:opacity-50"
+              placeholder="••••••••"
+            />
           </div>
-        )}
-      </section>
-    </main>
+
+          {/* Exibição de Erro */}
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg border border-red-300 dark:border-red-700">
+              {error}
+            </p>
+          )}
+
+          {/* Botão de Envio */}
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 dark:disabled:bg-blue-800 transition duration-150 ease-in-out"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Entrando...
+                </div>
+              ) : (
+                "Entrar"
+              )}
+            </button>
+          </div>
+        </form>
+ 
+        {/* --- CORREÇÃO APLICADA ---
+           O link "Cadastre-se" foi removido daqui 
+           para alinhar com a regra de negócio.
+        */}
+        
+      </div>
+    </PageLayout>
   );
 }

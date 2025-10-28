@@ -1,0 +1,15 @@
+{
+  "name": "agendamentos-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Painel de controle para o projeto de agendamentos (Docker + Next.js)",
+  "scripts": {
+    "start": "docker compose up -d",
+    "stop": "docker compose down",
+    "build": "docker compose up -d --build",
+    "logs": "docker compose logs -f app",
+    "install:fe": "cd frontend && npm install",
+    "add:fe": "cd frontend && npm install",
+    "postinstall": "npm run install:fe"
+  }
+}
