@@ -1,3 +1,4 @@
+
 // Tipos que seus componentes irão usar
 export type Profissional = {
   id: string;
@@ -25,7 +26,7 @@ const MOCK_PROFISSIONAIS: Profissional[] = [
     id: "1",
     nome: "Dr. André Silva",
     especialidade: "Clínico Geral",
-    fotoUrl: "/andre-silva.png",
+    fotoUrl: "/dr-andre-silva.png", 
   },
   {
     id: "2",
@@ -33,12 +34,20 @@ const MOCK_PROFISSIONAIS: Profissional[] = [
     especialidade: "Psicóloga",
     fotoUrl: "/dra-beatriz-costa.png",
   },
+  
+  {
+    id: "3",
+    nome: "Dra. Ana Laura",
+    especialidade: "Dentista",
+    fotoUrl: "/dra-ana-laura.png", 
+  },
 ];
 
 const MOCK_SERVICOS: Servico[] = [
   { id: "s1", nome: "Consulta Inicial", duracao: 60, preco: 150.0 },
   { id: "s2", nome: "Sessão de Acompanhamento", duracao: 45, preco: 100.0 },
   { id: "s3", nome: "Retorno", duracao: 30, preco: 0.0 },
+  // (No futuro, você pode querer criar MOCK_SERVICOS_DENTISTA, etc.)
 ];
 
 // --- NOSSAS FUNÇÕES FALSAS DE API ---
@@ -53,10 +62,19 @@ export async function getProfissionais(): Promise<Profissional[]> {
   return Promise.resolve(MOCK_PROFISSIONAIS);
 }
 
+/** Busca um profissional específico pelo ID */
+export async function getProfissional(id: string): Promise<Profissional | undefined> {
+  await fakeNetworkDelay();
+  // Encontra o profissional no array MOCK_PROFISSIONAIS
+  const profissional = MOCK_PROFISSIONAIS.find((p) => p.id === id);
+  return Promise.resolve(profissional);
+}
+
 /** Busca os serviços de um profissional (neste mock, todos oferecem os mesmos) */
 export async function getServicos(profissionalId: string): Promise<Servico[]> {
   await fakeNetworkDelay();
   // A lógica real buscaria serviços por ID, aqui só ignoramos o ID
+  // Se o ID for '3' (Dentista), podemos retornar serviços diferentes no futuro.
   return Promise.resolve(MOCK_SERVICOS);
 }
 
