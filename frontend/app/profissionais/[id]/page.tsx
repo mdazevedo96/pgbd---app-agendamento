@@ -1,226 +1,181 @@
-// Em: frontend/app/profissionais/[id]/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
-import PageLayout from "@/components/PageLayout"; // Layout Padrão
-
-// Imports da API (caminhos corretos para sua estrutura)
-import {
-  getProfissional,
-  getServicos,
-  getSlotsDisponiveis,
-  criarAgendamento,
-} from "@/libs/mockApi";
-import type { Profissional, Servico, SlotDisponivel } from "@/libs/mockApi";
-
-// Imports do Calendário e Datas
-import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
-import { format, parse, startOfWeek, getDay } from "date-fns";
-import { ptBR }  from "date-fns/locale/pt-BR";
-
-// Configura o localizador do calendário para Português-Brasil
-const locales = { "pt-BR": ptBR };
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek,
-  getDay,
-  locales,
-});
+import PageLayout from "@/components/PageLayout";
+import { getProfissional, createAgendamento } from "@/libs/api";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function ProfissionalDetalhePage() {
   const router = useRouter();
-  const params = useParams(); // Hook para pegar o [id] da URL
-  const profissionalId = params.id as string;
+  const params = useParams();
+  const profissionalId = Number(params.id);
 
-  // Estados da página
-  const [profissional, setProfissional] = useState<Profissional | null>(null);
-  const [servicos, setServicos] = useState<Servico[]>([]);
-  const [slots, setSlots] = useState<SlotDisponivel[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedServico, setSelectedServico] = useState<Servico | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<SlotDisponivel | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [profissional, setProfissional] = useState<any>(null);
+  const [selectedServico, setSelectedServico] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // 1. Busca os dados do profissional e os serviços
+  // Usuário logado
+  const user =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("user") || "{}")
+      : null;
+
+  // Carrega o profissional
   useEffect(() => {
     if (profissionalId) {
-      setLoading(true);
-      Promise.all([
-        getProfissional(profissionalId),
-        getServicos(profissionalId),
-      ])
-        .then(([profData, servicosData]) => {
-          if (profData) {
-            setProfissional(profData);
-          }
-          setServicos(servicosData);
-        })
-        .finally(() => setLoading(false));
+      getProfissional(profissionalId)
+        .then(setProfissional)
+        .catch(() => setMessage("Erro ao carregar profissional."));
     }
   }, [profissionalId]);
 
-  // 2. Busca os slots disponíveis QUANDO a data ou o serviço mudar
-  useEffect(() => {
-    if (profissionalId && selectedDate && selectedServico) {
-      setLoadingSlots(true); // Spinner separado para os slots
-      getSlotsDisponiveis(profissionalId, selectedDate)
-        .then(setSlots)
-        .finally(() => setLoadingSlots(false));
-    }
-  }, [profissionalId, selectedDate, selectedServico]);
+  // Serviços fictícios (pode vir do backend depois)
+  const servicos = [
+    { nome: "Consulta Inicial", duracao: 60, preco: 150 },
+    { nome: "Retorno", duracao: 30, preco: 0 },
+    { nome: "Acompanhamento", duracao: 45, preco: 100 },
+  ];
 
-  // 3. Função para lidar com o agendamento final
-  const handleAgendamento = async () => {
-    if (!profissionalId || !selectedServico || !selectedSlot) {
-      alert("Por favor, selecione um serviço e um horário.");
+  // Horários fixos por enquanto
+  const horarios = [
+    "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"
+  ];
+
+  // Agendar
+  const handleAgendar = async () => {
+    if (!selectedServico || !selectedDate || !selectedTime) {
+      setMessage("⚠️ Selecione serviço, data e horário.");
       return;
     }
 
-    setLoading(true);
+    const dataHora = new Date(`${selectedDate}T${selectedTime}:00`);
     try {
-      await criarAgendamento({
-        profissionalId: profissionalId,
-        servicoId: selectedServico.id,
-        inicio: selectedSlot.inicio,
+      setLoading(true);
+      setMessage(null);
+
+      await createAgendamento({
+        medicoId: profissionalId,
+        usuarioId: user.id,
+        dataHora: dataHora.toISOString(),
+        servico: selectedServico,
       });
-      alert("Agendamento realizado com sucesso! (Simulado)");
-      router.push("/home"); // Volta para a lista de profissionais
-    } catch (err) {
-      alert("Erro ao realizar agendamento.");
+
+      setMessage("✅ Agendamento realizado com sucesso!");
+      setTimeout(() => router.push("/home"), 1200);
+    } catch (err: any) {
+      setMessage(err.message || "Erro ao criar agendamento.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !profissional) {
+  if (!profissional) {
     return (
       <PageLayout title="Carregando..." subtitle="Buscando dados do profissional.">
-        <div className="text-center text-gray-600">
+        <div className="text-center mt-6 text-gray-600">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent" />
         </div>
       </PageLayout>
     );
   }
 
-  if (!profissional) {
-    return (
-      <PageLayout title="Erro" subtitle="Profissional não encontrado.">
-        <p className="text-center">Este profissional não foi encontrado.</p>
-      </PageLayout>
-    );
-  }
-
   return (
     <PageLayout
-      title={profissional.nome}
+      title={`Agendar com ${profissional.nome}`}
       subtitle={profissional.especialidade}
     >
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-        
-        {/* --- COLUNA 1: Serviços --- */}
-        <div className="md:col-span-1">
+      <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-xl space-y-8">
+
+        {/* 1. Escolher serviço */}
+        <div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">1. Escolha o Serviço</h2>
           <div className="space-y-3">
-            {servicos.map((servico) => (
+            {servicos.map((s) => (
               <button
-                key={servico.id}
-                onClick={() => {
-                  setSelectedServico(servico);
-                  setSelectedSlot(null); // Reseta o slot ao trocar de serviço
-                }}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                  selectedServico?.id === servico.id
-                    ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300" // Estado selecionado
-                    : "bg-white border-gray-300 hover:border-gray-400"  // Estado padrão
-                }`}
+                key={s.nome}
+                onClick={() => setSelectedServico(s.nome)}
+                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedServico === s.nome
+                    ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300"
+                    : "bg-white border-gray-300 hover:border-gray-400"
+                  }`}
               >
-                {/* --- CORREÇÃO APLICADA AQUI --- */}
-                <div className="font-semibold text-gray-900">{servico.nome}</div>
+                <div className="font-semibold text-gray-900">{s.nome}</div>
                 <div className="text-sm text-gray-600">
-                  Duração: {servico.duracao} min | R$ {servico.preco.toFixed(2)}
+                  Duração: {s.duracao} min | R$ {s.preco.toFixed(2)}
                 </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* --- COLUNA 2: Calendário e Horários --- */}
-        <div className="md:col-span-2 space-y-8">
-          
-          {/* 2. Calendário */}
+        {/* 2. Escolher data */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">2. Escolha o Dia</h2>
+          <DatePicker
+            selected={selectedDate ? new Date(selectedDate) : null}
+            onChange={(date) => setSelectedDate(format(date!, "yyyy-MM-dd"))}
+            minDate={new Date()}
+            dateFormat="dd/MM/yyyy"
+            locale="pt-BR"
+            className="border rounded-lg p-3 w-full"
+            placeholderText="Selecione uma data"
+          />
+        </div>
+
+        {/* 3. Escolher horário */}
+        {selectedDate && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">2. Escolha o Dia</h2>
-            {/* O "text-gray-800" aqui garante que o calendário tenha letras escuras */}
-            <div className="bg-white p-4 rounded-lg shadow-lg h-[600px] text-gray-800">
-              <Calendar
-                localizer={localizer}
-                culture="pt-BR"
-                events={[]}
-                startAccessor="start"
-                endAccessor="end"
-                views={[Views.MONTH, Views.DAY]} // Permite visão de Mês e Dia
-                defaultView={Views.MONTH}
-                onSelectSlot={(slotInfo) => setSelectedDate(slotInfo.start)}
-                selectable
-              />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              3. Escolha o Horário ({format(new Date(selectedDate), "dd/MM/yyyy", { locale: ptBR })})
+            </h2>
+            <div className="grid grid-cols-4 gap-3">
+              {horarios.map((h) => (
+                <button
+                  key={h}
+                  onClick={() => setSelectedTime(h)}
+                  className={`p-3 rounded-lg border-2 font-semibold transition-all ${selectedTime === h
+                      ? "bg-blue-500 text-white border-blue-700"
+                      : "bg-white border-gray-300 hover:bg-gray-100 text-gray-800"
+                    }`}
+                >
+                  {h}
+                </button>
+              ))}
             </div>
           </div>
+        )}
 
-          {/* 3. Slots de Horário */}
-          {selectedServico && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                3. Escolha o Horário (Dia: {format(selectedDate, "dd/MM/yyyy")})
-              </h2>
-              
-              {loadingSlots && (
-                 <div className="text-center text-gray-600">
-                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent" />
-                  <p className="mt-1">Buscando horários...</p>
-                </div>
-              )}
-              
-              {!loadingSlots && slots.length === 0 && (
-                <p className="text-gray-600 bg-gray-100 p-4 rounded-lg">
-                  Nenhum horário vago para este dia.
-                </p>
-              )}
-              
-              <div className="grid grid-cols-4 gap-3">
-                {slots.map((slot) => (
-                  <button
-                    key={slot.inicio.toISOString()}
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`p-3 rounded-lg border-2 font-semibold transition-all ${
-                      selectedSlot?.inicio === slot.inicio
-                        ? "bg-blue-500 text-white border-blue-700" // Selecionado
-                        : "bg-white border-gray-300 hover:bg-gray-100 text-gray-800" // Padrão (letras escuras)
-                    }`}
-                  >
-                    {format(slot.inicio, "HH:mm")}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Mensagem */}
+        {message && (
+          <p
+            className={`mt-4 text-center text-sm p-3 rounded-lg ${message.includes("✅")
+              ? "bg-green-100 text-green-700"
+              : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {message}
+          </p>
+        )}
 
-          {/* 4. Botão de Confirmação */}
-          {selectedServico && selectedSlot && (
-            <div className="mt-8">
-              <button
-                onClick={handleAgendamento}
-                disabled={loading}
-                className="w-full py-4 px-6 bg-green-600 text-white font-bold text-lg rounded-lg shadow-lg hover:bg-green-700 transition-all disabled:bg-gray-400"
-              >
-                Confirmar Agendamento
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Botão confirmar */}
+        {selectedServico && selectedDate && selectedTime && (
+          <div>
+            <button
+              onClick={handleAgendar}
+              disabled={loading}
+              className="w-full py-4 px-6 bg-green-600 text-white font-bold text-lg rounded-lg shadow-lg hover:bg-green-700 transition-all disabled:bg-gray-400"
+            >
+              {loading ? "Salvando..." : "Confirmar Agendamento"}
+            </button>
+          </div>
+        )}
       </div>
     </PageLayout>
   );
