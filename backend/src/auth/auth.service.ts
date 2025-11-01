@@ -13,14 +13,14 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(cpf: string, password: string) {
+  async validateUser(cpf: string, senha: string) {
     const user = await this.usuariosRepo.findOne({ where: { cpf } });
     if (!user) throw new UnauthorizedException('Usuário não encontrado');
 
-    const isValid = await bcrypt.compare(password, user.password);
+    const isValid = await bcrypt.compare(senha, user.senha);
     if (!isValid) throw new UnauthorizedException('Senha incorreta');
 
-    const { password: _, ...result } = user;
+    const { senha: _, ...result } = user;
     return result;
   }
 

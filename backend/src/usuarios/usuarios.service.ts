@@ -15,14 +15,14 @@ export class UsuariosService {
 
   findAll(): Promise<Partial<Usuario>[]> {
     return this.repo.find({
-      select: ['id', 'nome', 'cpf', 'identidade', 'nivel'],
+      select: ['id', 'nome', 'cpf', 'nivel'],
     });
   }
 
   async findOne(id: number): Promise<Partial<Usuario>> {
     const usuario = await this.repo.findOneBy({ id });
     if (!usuario) throw new NotFoundException(`Usuário ${id} não encontrado`);
-    delete (usuario as any).password;
+    delete (usuario as any).senha;
     return usuario;
   }
 
@@ -30,18 +30,17 @@ export class UsuariosService {
     const exists = await this.repo.findOneBy({ cpf: data.cpf });
     if (exists) throw new ConflictException('CPF já cadastrado');
 
-    const hashed = await bcrypt.hash(data.password, 10);
+    const hashed = await bcrypt.hash(data.senha, 10);
 
     const novo = this.repo.create({
       nome: data.nome,
       cpf: data.cpf,
-      identidade: data.identidade,
-      password: hashed,
+      senha: hashed,
       nivel: data.nivel ?? NivelUsuario.PACIENTE,
     });
 
     const saved = await this.repo.save(novo);
-    const { password, ...rest } = saved;
+    const { senha, ...rest } = saved;
     return rest;
   }
 
@@ -49,8 +48,8 @@ export class UsuariosService {
     const usuario = await this.repo.findOneBy({ id });
     if (!usuario) throw new NotFoundException(`Usuário ${id} não encontrado`);
 
-    if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
+    if (data.senha) {
+      data.senha = await bcrypt.hash(data.senha, 10);
     }
 
     if (data.cpf && data.cpf !== usuario.cpf) {
@@ -66,7 +65,7 @@ export class UsuariosService {
     const updated = await this.repo.findOneBy({ id });
     if (!updated) throw new NotFoundException(`Usuário ${id} não encontrado após atualização`);
 
-    const { password, ...rest } = updated;
+    const { senha, ...rest } = updated;
     return rest;
   }
 

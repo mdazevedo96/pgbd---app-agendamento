@@ -5,7 +5,7 @@ export enum NivelUsuario {
   PACIENTE = 'paciente',
 }
 
-@Entity()
+@Entity('usuarios')
 export class Usuario {
   @PrimaryGeneratedColumn()
   id: number;
@@ -17,15 +17,11 @@ export class Usuario {
   cpf: string;
 
   @Column()
-  identidade: string;
+  senha: string;
 
-  @Column()
-  password: string;
-
-  @Column({
-    type: 'enum',
-    enum: NivelUsuario,
-    default: NivelUsuario.PACIENTE,
-  })
+  @Column({ type: 'enum', enum: NivelUsuario })
   nivel: NivelUsuario;
 }
+
+
+

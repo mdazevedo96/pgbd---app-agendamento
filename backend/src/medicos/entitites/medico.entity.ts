@@ -9,6 +9,9 @@ export class Medico {
   nome: string;
 
   @Column()
+  crm: string;
+
+  @Column()
   especialidade: string;
 
   @Column({ nullable: true })
