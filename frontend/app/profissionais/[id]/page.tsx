@@ -16,17 +16,24 @@ export default function ProfissionalDetalhePage() {
 
   const [profissional, setProfissional] = useState<any>(null);
   const [selectedServico, setSelectedServico] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Usuário logado
-  const user =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user") || "{}")
-      : null;
+  const [user, setUser] = useState<any | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    }
+  }, []);
+
+  console.log("Usuário carregado:", user);
   // Carrega o profissional
   useEffect(() => {
     if (profissionalId) {
@@ -55,15 +62,34 @@ export default function ProfissionalDetalhePage() {
       return;
     }
 
-    const dataHora = new Date(`${selectedDate}T${selectedTime}:00`);
+    const [hour, minute] = selectedTime.split(":").map(Number);
+    const dataHora = new Date(
+      selectedDate!.getFullYear(),
+      selectedDate!.getMonth(),
+      selectedDate!.getDate(),
+      hour,
+      minute,
+      0
+    );
+
+    // formato local, não UTC
+    const dataHoraFormatada = format(dataHora, "yyyy-MM-dd'T'HH:mm:ss");
     try {
       setLoading(true);
       setMessage(null);
 
+      if (!user || !user.id) {
+        setMessage("⚠️ Usuário não está logado.");
+        return;
+      }
+
+      // transforma id em número, caso venha como string
+      const usuarioId = typeof user.id === "string" ? parseInt(user.id, 10) : user.id;
+
       await createAgendamento({
         medicoId: profissionalId,
-        usuarioId: user.id,
-        dataHora: dataHora.toISOString(),
+        usuarioId,
+        dataHora: dataHoraFormatada,
         servico: selectedServico,
       });
 
@@ -120,10 +146,13 @@ export default function ProfissionalDetalhePage() {
           <h2 className="text-2xl font-bold text-gray-800 mb-4">2. Escolha o Dia</h2>
           <DatePicker
             selected={selectedDate ? new Date(selectedDate) : null}
-            onChange={(date) => setSelectedDate(format(date!, "yyyy-MM-dd"))}
+              onChange={(date) => {
+                console.log("📅 Data selecionada (bruta):", date);
+                if (date) setSelectedDate(date);
+              }}
             minDate={new Date()}
             dateFormat="dd/MM/yyyy"
-            locale="pt-BR"
+            locale={ptBR}
             className="border rounded-lg p-3 w-full"
             placeholderText="Selecione uma data"
           />

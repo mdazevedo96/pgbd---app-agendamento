@@ -21,7 +21,7 @@ export default function AgendamentoPage() {
 
   // Usuário logado
   const user = typeof window !== "undefined"
-    ? JSON.parse(localStorage.getItem("user") || "{}")
+    ? JSON.parse(localStorage.getItem("user") || "null")
     : null;
 
   useEffect(() => {

@@ -12,4 +12,8 @@ export class CreateMedicoDto {
   @IsOptional()
   @IsString()
   fotoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  crm: string;
 }
