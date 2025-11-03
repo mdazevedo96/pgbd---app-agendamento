@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Param, Delete, Query, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Query,
+  Patch,
+} from '@nestjs/common';
 import { AgendamentosService } from './agendamentos.service';
 import { CreateAgendamentoDto } from './dto/create-agendamento.dto';
 import { StatusAgendamento } from './entities/agendamento.entity';
@@ -21,13 +30,31 @@ export class AgendamentosController {
   }
 
   @Get()
-  async findAll() {
-    return this.agendamentosService.findAll();
+  async findAll(
+    @Query('usuarioId') usuarioId?: string,
+    @Query('medicoId') medicoId?: string,
+    @Query('medicoNome') medicoNome?: string,
+    @Query('usuarioNome') usuarioNome?: string,
+    @Query('status') status?: StatusAgendamento,
+    @Query('data') data?: string,
+  ) {
+    return this.agendamentosService.findAll({
+      usuarioId: usuarioId ? parseInt(usuarioId, 10) : undefined,
+      medicoId: medicoId ? parseInt(medicoId, 10) : undefined,
+      medicoNome,
+      usuarioNome,
+      status,
+      data,
+    });
   }
 
   @Get('usuario/:usuarioId')
-  async findByUser(@Param('usuarioId') usuarioId: number) {
-    return this.agendamentosService.findByUser(usuarioId);
+  async findByUser(
+    @Param('usuarioId') usuarioId: number,
+    @Query('status') status?: StatusAgendamento,
+    @Query('data') data?: string,
+  ) {
+    return this.agendamentosService.findByUser(usuarioId, { status, data });
   }
 
   @Delete(':id')

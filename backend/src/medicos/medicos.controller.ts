@@ -7,7 +7,7 @@ import {
   Param,
   Delete,
   ParseIntPipe,
-  UseGuards,
+  Query,
 } from '@nestjs/common';
 import { MedicosService } from './medicos.service';
 import { CreateMedicoDto } from './dto/create-medico.dto';
@@ -16,14 +16,20 @@ import { UpdateMedicoDto } from './dto/update-medico.dto';
 @Controller('medicos')
 export class MedicosController {
   constructor(private readonly medicosService: MedicosService) {}
+
   @Post()
   create(@Body() createMedicoDto: CreateMedicoDto) {
     return this.medicosService.create(createMedicoDto);
   }
 
+  // 🔎 Agora aceita filtros opcionais
   @Get()
-  findAll() {
-    return this.medicosService.findAll();
+  findAll(
+    @Query('nome') nome?: string,
+    @Query('especialidade') especialidade?: string,
+    @Query('crm') crm?: string,
+  ) {
+    return this.medicosService.findAll({ nome, especialidade, crm });
   }
 
   @Get(':id')

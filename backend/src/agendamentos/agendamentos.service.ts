@@ -17,11 +17,15 @@ export class AgendamentosService {
 
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
-  ) { }
+  ) {}
 
   async create(dto: CreateAgendamentoDto) {
-    const medico = await this.medicoRepo.findOne({ where: { id: dto.medicoId } });
-    const usuario = await this.usuarioRepo.findOne({ where: { id: dto.usuarioId } });
+    const medico = await this.medicoRepo.findOne({
+      where: { id: dto.medicoId },
+    });
+    const usuario = await this.usuarioRepo.findOne({
+      where: { id: dto.usuarioId },
+    });
 
     if (!medico || !usuario) {
       throw new BadRequestException('Médico ou usuário não encontrado');
@@ -30,21 +34,17 @@ export class AgendamentosService {
     const dataHora = new Date(dto.dataHora);
 
     const agendamentoExistente = await this.agendamentoRepo.findOne({
-      where: {
-        usuario: { id: usuario.id },
-        medico: { id: medico.id },
-      },
+      where: { usuario: { id: usuario.id }, medico: { id: medico.id } },
     });
 
     if (agendamentoExistente) {
-      throw new BadRequestException('O usuário já tem um agendamento com este médico');
+      throw new BadRequestException(
+        'O usuário já tem um agendamento com este médico',
+      );
     }
 
     const existeAgendamento = await this.agendamentoRepo.findOne({
-      where: {
-        medico: { id: medico.id },
-        dataHora,
-      },
+      where: { medico: { id: medico.id }, dataHora },
     });
 
     if (existeAgendamento) {
@@ -66,20 +66,19 @@ export class AgendamentosService {
 
   async update(id: number, dto: CreateAgendamentoDto) {
     const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
-    if (!agendamento) throw new BadRequestException('Agendamento não encontrado');
+    if (!agendamento)
+      throw new BadRequestException('Agendamento não encontrado');
 
-    const medico = await this.medicoRepo.findOne({ where: { id: dto.medicoId } });
+    const medico = await this.medicoRepo.findOne({
+      where: { id: dto.medicoId },
+    });
     if (!medico) throw new BadRequestException('Médico não encontrado');
 
     const dataHora = new Date(dto.dataHora);
 
     const conflito = await this.agendamentoRepo.findOne({
-      where: {
-        medico: { id: medico.id },
-        dataHora,
-      },
+      where: { medico: { id: medico.id }, dataHora },
     });
-
     if (conflito && conflito.id !== agendamento.id) {
       throw new BadRequestException(
         'Este horário já está ocupado para o médico selecionado.',
@@ -100,12 +99,16 @@ export class AgendamentosService {
     const medico = await this.medicoRepo.findOne({ where: { id: medicoId } });
     if (!medico) throw new BadRequestException('Médico não encontrado');
 
-    if (!medico.horariosDisponiveis || medico.horariosDisponiveis.length === 0) {
-      throw new BadRequestException('Este médico ainda não definiu horários disponíveis');
+    if (
+      !medico.horariosDisponiveis ||
+      medico.horariosDisponiveis.length === 0
+    ) {
+      throw new BadRequestException(
+        'Este médico ainda não definiu horários disponíveis',
+      );
     }
 
     const dataBusca = data ? new Date(`${data}T00:00:00`) : new Date();
-
     const diaSemana = dataBusca.getDay();
 
     if (diaSemana === 0 || diaSemana === 6) {
@@ -118,7 +121,6 @@ export class AgendamentosService {
 
     const inicio = new Date(dataBusca);
     inicio.setHours(0, 0, 0, 0);
-
     const fim = new Date(dataBusca);
     fim.setHours(23, 59, 59, 999);
 
@@ -126,12 +128,13 @@ export class AgendamentosService {
       where: { medico: { id: medico.id }, dataHora: Between(inicio, fim) },
     });
 
-    const ocupados = agendamentos.map((a) => {
-      const dataLocal = new Date(a.dataHora);
-      return dataLocal.toTimeString().substring(0, 5);
-    });
+    const ocupados = agendamentos.map((a) =>
+      new Date(a.dataHora).toTimeString().substring(0, 5),
+    );
 
-    const livres = medico.horariosDisponiveis.filter((h) => !ocupados.includes(h));
+    const livres = medico.horariosDisponiveis.filter(
+      (h) => !ocupados.includes(h),
+    );
 
     return {
       medicoId,
@@ -140,33 +143,87 @@ export class AgendamentosService {
     };
   }
 
-  async findAll() {
-    return this.agendamentoRepo.find({
-      relations: ['medico', 'usuario'],
-      order: { dataHora: 'ASC' },
-    });
+  async findAll(filters?: {
+    usuarioId?: number;
+    medicoId?: number;
+    status?: StatusAgendamento;
+    data?: string;
+    medicoNome?: string;
+    usuarioNome?: string;
+  }) {
+    const query = this.agendamentoRepo
+      .createQueryBuilder('agendamento')
+      .leftJoinAndSelect('agendamento.medico', 'medico')
+      .leftJoinAndSelect('agendamento.usuario', 'usuario');
+
+    if (filters?.usuarioId)
+      query.andWhere('usuario.id = :usuarioId', {
+        usuarioId: filters.usuarioId,
+      });
+    if (filters?.medicoId)
+      query.andWhere('medico.id = :medicoId', { medicoId: filters.medicoId });
+    if (filters?.status)
+      query.andWhere('agendamento.status = :status', {
+        status: filters.status,
+      });
+    if (filters?.data) {
+      const inicio = new Date(`${filters.data}T00:00:00`);
+      const fim = new Date(`${filters.data}T23:59:59`);
+      query.andWhere('agendamento.dataHora BETWEEN :inicio AND :fim', {
+        inicio,
+        fim,
+      });
+    }
+    if (filters?.medicoNome)
+      query.andWhere('LOWER(medico.nome) LIKE :medicoNome', {
+        medicoNome: `%${filters.medicoNome.toLowerCase()}%`,
+      });
+    if (filters?.usuarioNome)
+      query.andWhere('LOWER(usuario.nome) LIKE :usuarioNome', {
+        usuarioNome: `%${filters.usuarioNome.toLowerCase()}%`,
+      });
+
+    return query.orderBy('agendamento.dataHora', 'ASC').getMany();
   }
 
-  async findByUser(usuarioId: number) {
-    return this.agendamentoRepo.find({
-      where: { usuario: { id: usuarioId } },
-      relations: ['medico'],
-      order: { dataHora: 'ASC' },
-    });
+  async findByUser(
+    usuarioId: number,
+    filters?: { status?: StatusAgendamento; data?: string },
+  ) {
+    const query = this.agendamentoRepo
+      .createQueryBuilder('agendamento')
+      .leftJoinAndSelect('agendamento.medico', 'medico')
+      .where('agendamento.usuarioId = :usuarioId', { usuarioId });
+
+    if (filters?.status)
+      query.andWhere('agendamento.status = :status', {
+        status: filters.status,
+      });
+
+    if (filters?.data) {
+      const inicio = new Date(`${filters.data}T00:00:00`);
+      const fim = new Date(`${filters.data}T23:59:59`);
+      query.andWhere('agendamento.dataHora BETWEEN :inicio AND :fim', {
+        inicio,
+        fim,
+      });
+    }
+
+    return query.orderBy('agendamento.dataHora', 'ASC').getMany();
   }
 
   async remove(id: number) {
     return this.agendamentoRepo.delete(id);
   }
+
   async atualizarStatus(id: number, status: StatusAgendamento) {
     const agendamento = await this.agendamentoRepo.findOne({
       where: { id },
-      relations: ['medico', 'usuario'], // opcional, caso queira retornar com as relações
+      relations: ['medico', 'usuario'],
     });
 
-    if (!agendamento) {
+    if (!agendamento)
       throw new BadRequestException('Agendamento não encontrado');
-    }
 
     agendamento.status = status;
     return this.agendamentoRepo.save(agendamento);
