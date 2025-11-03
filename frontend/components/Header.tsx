@@ -7,7 +7,7 @@ export default function Header() {
         <Link href="/home" className="text-white text-lg font-semibold hover:underline">
           Home
         </Link>
-        <Link href="/equipe" className="text-white text-lg font-semibold hover:underline">
+        <Link href="/medicos" className="text-white text-lg font-semibold hover:underline">
           Agendamentos
         </Link>
         <Link href="/perfil" className="text-white text-lg font-semibold hover:underline">

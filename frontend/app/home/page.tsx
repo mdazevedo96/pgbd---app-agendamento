@@ -18,7 +18,7 @@ export default function HomePage() {
         Escolha o profissional, o horário e acompanhe seu atendimento de forma simples e online.
       </p>
       <Link
-        href="/profissionais"
+        href="/medicos"
         className="inline-block bg-white text-teal-600 font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-gray-100 transition"
       >
         Agende sua Consulta
@@ -63,7 +63,7 @@ export default function HomePage() {
         <section className="mt-20 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Pronto para cuidar da sua saúde?</h2>
           <Link
-            href="/profissionais"
+            href="/medicos"
             className="inline-block bg-teal-600 text-white font-bold px-8 py-4 rounded-lg shadow-lg hover:bg-teal-700 transition text-lg"
           >
             Agende sua Consulta Aqui

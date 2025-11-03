@@ -34,7 +34,7 @@ export default async function HomePage() {
             {profissionais.map((prof) => (
               <Link
                 key={prof.id}
-                href={`/profissionais/${prof.id}`}
+                href={`/agendamento/${prof.id}`}
                 className="group"
               >
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">

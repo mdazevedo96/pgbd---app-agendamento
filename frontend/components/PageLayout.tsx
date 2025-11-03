@@ -13,7 +13,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
       <Header />
 
       {/* Conteúdo principal */}
-      <section className="py-16 px-4">
+      <section className="pt-30 px-4"> {/* <— aqui: pt-28 = 7rem */}
         {children}
       </section>
     </main>
