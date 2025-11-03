@@ -8,7 +8,7 @@ export default function Header() {
           Home
         </Link>
         <Link href="/medicos" className="text-white text-lg font-semibold hover:underline">
-          Agendamentos
+          Medicos
         </Link>
         <Link href="/perfil" className="text-white text-lg font-semibold hover:underline">
           Perfil

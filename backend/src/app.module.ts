@@ -19,6 +19,7 @@ import { AgendamentosModule } from './agendamentos/agendamentos.module';
       database: process.env.DB_NAME,
       entities: [join(__dirname, '**', '*.entity.{ts,js}')],
       synchronize: true,
+      logging: true,
     }),
     MedicosModule,
     UsuariosModule,

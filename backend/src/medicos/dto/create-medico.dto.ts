@@ -1,11 +1,12 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsString, IsOptional, IsArray } from 'class-validator';
 
 export class CreateMedicoDto {
-  @IsNotEmpty()
   @IsString()
   nome: string;
 
-  @IsNotEmpty()
+  @IsString()
+  crm: string;
+
   @IsString()
   especialidade: string;
 
@@ -14,6 +15,6 @@ export class CreateMedicoDto {
   fotoUrl?: string;
 
   @IsOptional()
-  @IsString()
-  crm: string;
+  @IsArray()
+  horariosDisponiveis?: string[];
 }

@@ -1,5 +1,3 @@
-import { Medico } from 'src/medicos/entitites/medico.entity';
-import { Usuario } from 'src/usuarios/entities/usuario.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,6 +5,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { Usuario } from 'src/usuarios/entities/usuario.entity';
+import { Medico } from 'src/medicos/entities/medico.entity';
 
 export enum StatusAgendamento {
   PENDENTE = 'pendente',
@@ -16,14 +16,14 @@ export enum StatusAgendamento {
 
 @Entity('agendamentos')
 export class Agendamento {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
-  @ManyToOne(() => Medico)
+  @ManyToOne(() => Medico, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'medicoId' })
   medico: Medico;
 
-  @ManyToOne(() => Usuario)
+  @ManyToOne(() => Usuario, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'usuarioId' })
   usuario: Usuario;
 

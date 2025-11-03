@@ -1,8 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity()
+@Entity('medicos')
 export class Medico {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'int' })
   id: number;
 
   @Column()
@@ -16,4 +16,7 @@ export class Medico {
 
   @Column({ nullable: true })
   fotoUrl?: string;
+
+  @Column({ type: 'json', nullable: true })
+  horariosDisponiveis?: string[];
 }

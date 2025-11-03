@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsNumber, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsDateString, IsEnum, IsOptional } from 'class-validator';
+import { StatusAgendamento } from '../entities/agendamento.entity';
 
 export class CreateAgendamentoDto {
   @IsNumber()
@@ -13,4 +14,8 @@ export class CreateAgendamentoDto {
   @IsString()
   @IsNotEmpty()
   servico: string;
+
+  @IsEnum(StatusAgendamento)
+  @IsOptional()
+  status?: StatusAgendamento;
 }

@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Agendamento } from './entities/agendamento.entity';
 import { AgendamentosService } from './agendamentos.service';
 import { AgendamentosController } from './agendamentos.controller';
-import { Medico } from 'src/medicos/entitites/medico.entity';
+import { Medico } from 'src/medicos/entities/medico.entity';
 import { Usuario } from 'src/usuarios/entities/usuario.entity';
 
 @Module({

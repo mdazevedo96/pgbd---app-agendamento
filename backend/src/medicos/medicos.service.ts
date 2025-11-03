@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Medico } from './entitites/medico.entity';
+import { Medico } from './entities/medico.entity';
 import { CreateMedicoDto } from './dto/create-medico.dto';
 import { UpdateMedicoDto } from './dto/update-medico.dto';
 
@@ -21,8 +21,10 @@ export class MedicosService {
     }
 
     async create(data: CreateMedicoDto) {
-        const medico = this.repo.create(data);
-        return this.repo.save(medico);
+        const { id, ...cleanData } = data as any;
+        const medico = this.repo.create(cleanData);
+        const saved = await this.repo.save(medico);
+        return saved;
     }
 
     async update(id: number, data: UpdateMedicoDto) {

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MedicosService } from './medicos.service';
 import { MedicosController } from './medicos.controller';
-import { Medico } from './entitites/medico.entity';
+import { Medico } from './entities/medico.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({

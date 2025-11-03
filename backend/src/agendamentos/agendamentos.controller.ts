@@ -1,15 +1,24 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
 import { AgendamentosService } from './agendamentos.service';
 import { CreateAgendamentoDto } from './dto/create-agendamento.dto';
 
 @Controller('agendamentos')
 export class AgendamentosController {
-  constructor(private readonly agendamentosService: AgendamentosService) {}
+  constructor(private readonly agendamentosService: AgendamentosService) { }
 
   @Post()
   async create(@Body() dto: CreateAgendamentoDto) {
     return this.agendamentosService.create(dto);
   }
+
+  @Get('disponiveis/:medicoId')
+  async getHorariosDisponiveis(
+    @Param('medicoId') medicoId: number,
+    @Query('data') data?: string,
+  ) {
+    return this.agendamentosService.getHorariosDisponiveis(medicoId, data);
+  }
+
 
   @Get()
   async findAll() {
