@@ -29,6 +29,17 @@ export class AgendamentosService {
 
     const dataHora = new Date(dto.dataHora);
 
+    const agendamentoExistente = await this.agendamentoRepo.findOne({
+      where: {
+        usuario: { id: usuario.id },
+        medico: { id: medico.id },
+      },
+    });
+
+    if (agendamentoExistente) {
+      throw new BadRequestException('O usuário já tem um agendamento com este médico');
+    }
+
     const existeAgendamento = await this.agendamentoRepo.findOne({
       where: {
         medico: { id: medico.id },

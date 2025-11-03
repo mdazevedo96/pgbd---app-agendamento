@@ -13,7 +13,11 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUser({ nome: "Administrador", role: "admin" });
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+    }
   }, []);
 
   useEffect(() => {
@@ -29,6 +33,8 @@ export default function HomePage() {
     }
     fetchProfissionais();
   }, []);
+
+  console.log(user);
 
   const handleDelete = async (id: number, nome: string) => {
     const confirmDelete = confirm(`Tem certeza que deseja excluir o médico ${nome}?`);
@@ -109,12 +115,12 @@ export default function HomePage() {
                   <p className="text-sm text-gray-500 font-medium">CRM: {prof.crm}</p>
 
                   <div className="flex justify-between items-center mt-5">
-                    <Link
-                      href={`/agendamento/${prof.id}`}
-                      className="text-teal-600 font-semibold hover:text-teal-700 transition-colors text-sm"
-                    >
-                      Agendar →
-                    </Link>
+                      <Link
+                        href={`/agendamento/${prof.id}`}
+                        className="text-teal-600 font-semibold hover:text-teal-700 transition-colors text-sm"
+                      >
+                        Agendar → 
+                      </Link>
 
                     {user?.role === "admin" && (
                       <div className="flex gap-2">
