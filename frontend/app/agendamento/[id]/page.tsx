@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 import { getProfissional, createAgendamento } from "@/libs/api";
-import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import DatePicker from "react-datepicker";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -18,8 +18,10 @@ export default function ProfissionalDetalhePage() {
   const [selectedServico, setSelectedServico] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>("");
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
 
   // Usuário logado
   const [user, setUser] = useState<any | null>(null);
@@ -33,7 +35,6 @@ export default function ProfissionalDetalhePage() {
     }
   }, []);
 
-  console.log("Usuário carregado:", user);
   // Carrega o profissional
   useEffect(() => {
     if (profissionalId) {
@@ -43,19 +44,42 @@ export default function ProfissionalDetalhePage() {
     }
   }, [profissionalId]);
 
-  // Serviços fictícios (pode vir do backend depois)
+  // Serviços (pode vir do backend depois)
   const servicos = [
     { nome: "Consulta Inicial", duracao: 60, preco: 150 },
     { nome: "Retorno", duracao: 30, preco: 0 },
     { nome: "Acompanhamento", duracao: 45, preco: 100 },
   ];
 
-  // Horários fixos por enquanto
-  const horarios = [
-    "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"
-  ];
+  // 🔹 Quando selecionar uma data, busca horários livres no backend
+  useEffect(() => {
+    async function fetchHorarios() {
+      if (!selectedDate || !profissionalId) return;
+      setLoadingHorarios(true);
+      setSelectedTime("");
 
-  // Agendar
+      try {
+        const dataFormatada = format(selectedDate, "yyyy-MM-dd");
+        const response = await fetch(
+          `http://localhost:3333/agendamentos/disponiveis/${profissionalId}?data=${dataFormatada}`
+        );
+
+        if (!response.ok) throw new Error("Erro ao buscar horários disponíveis");
+
+        const data = await response.json();
+        setHorariosDisponiveis(data.horariosDisponiveis || []);
+      } catch (err) {
+        console.error(err);
+        setHorariosDisponiveis([]);
+      } finally {
+        setLoadingHorarios(false);
+      }
+    }
+
+    fetchHorarios();
+  }, [selectedDate, profissionalId]);
+
+  // 🔹 Criar agendamento
   const handleAgendar = async () => {
     if (!selectedServico || !selectedDate || !selectedTime) {
       setMessage("⚠️ Selecione serviço, data e horário.");
@@ -72,8 +96,8 @@ export default function ProfissionalDetalhePage() {
       0
     );
 
-    // formato local, não UTC
     const dataHoraFormatada = format(dataHora, "yyyy-MM-dd'T'HH:mm:ss");
+
     try {
       setLoading(true);
       setMessage(null);
@@ -83,8 +107,7 @@ export default function ProfissionalDetalhePage() {
         return;
       }
 
-      // transforma id em número, caso venha como string
-      const usuarioId = typeof user.id === "string" ? parseInt(user.id, 10) : user.id;
+      const usuarioId = Number(user.id);
 
       await createAgendamento({
         medicoId: profissionalId,
@@ -119,7 +142,7 @@ export default function ProfissionalDetalhePage() {
     >
       <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-xl space-y-8">
 
-        {/* 1. Escolher serviço */}
+        {/* 1. Serviço */}
         <div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">1. Escolha o Serviço</h2>
           <div className="space-y-3">
@@ -128,8 +151,8 @@ export default function ProfissionalDetalhePage() {
                 key={s.nome}
                 onClick={() => setSelectedServico(s.nome)}
                 className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedServico === s.nome
-                    ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300"
-                    : "bg-white border-gray-300 hover:border-gray-400"
+                  ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300"
+                  : "bg-white border-gray-300 hover:border-gray-400"
                   }`}
               >
                 <div className="font-semibold text-gray-900">{s.nome}</div>
@@ -141,43 +164,53 @@ export default function ProfissionalDetalhePage() {
           </div>
         </div>
 
-        {/* 2. Escolher data */}
+        {/* 2. Data */}
         <div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">2. Escolha o Dia</h2>
           <DatePicker
-            selected={selectedDate ? new Date(selectedDate) : null}
-              onChange={(date) => {
-                console.log("📅 Data selecionada (bruta):", date);
-                if (date) setSelectedDate(date);
-              }}
+            selected={selectedDate}
+            onChange={(date) => setSelectedDate(date)}
             minDate={new Date()}
             dateFormat="dd/MM/yyyy"
             locale={ptBR}
             className="border rounded-lg p-3 w-full"
             placeholderText="Selecione uma data"
+            filterDate={(date) => {
+              const day = date.getDay();
+              return day !== 0 && day !== 6;
+            }}
           />
         </div>
 
-        {/* 3. Escolher horário */}
+        {/* 3. Horário */}
         {selectedDate && (
           <div>
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              3. Escolha o Horário ({format(new Date(selectedDate), "dd/MM/yyyy", { locale: ptBR })})
+              3. Escolha o Horário ({format(selectedDate, "dd/MM/yyyy", { locale: ptBR })})
             </h2>
-            <div className="grid grid-cols-4 gap-3">
-              {horarios.map((h) => (
-                <button
-                  key={h}
-                  onClick={() => setSelectedTime(h)}
-                  className={`p-3 rounded-lg border-2 font-semibold transition-all ${selectedTime === h
+
+            {loadingHorarios ? (
+              <div className="text-center text-gray-500">Carregando horários...</div>
+            ) : horariosDisponiveis.length === 0 ? (
+              <div className="text-center text-gray-500">
+                Nenhum horário disponível neste dia.
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-3">
+                {horariosDisponiveis.map((h) => (
+                  <button
+                    key={h}
+                    onClick={() => setSelectedTime(h)}
+                    className={`p-3 rounded-lg border-2 font-semibold transition-all ${selectedTime === h
                       ? "bg-blue-500 text-white border-blue-700"
                       : "bg-white border-gray-300 hover:bg-gray-100 text-gray-800"
-                    }`}
-                >
-                  {h}
-                </button>
-              ))}
-            </div>
+                      }`}
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -187,13 +220,13 @@ export default function ProfissionalDetalhePage() {
             className={`mt-4 text-center text-sm p-3 rounded-lg ${message.includes("✅")
               ? "bg-green-100 text-green-700"
               : "bg-yellow-100 text-yellow-800"
-            }`}
+              }`}
           >
             {message}
           </p>
         )}
 
-        {/* Botão confirmar */}
+        {/* Botão */}
         {selectedServico && selectedDate && selectedTime && (
           <div>
             <button

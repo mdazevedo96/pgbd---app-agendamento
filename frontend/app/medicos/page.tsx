@@ -1,31 +1,58 @@
-// app/equipe/page.tsx
+"use client";
+
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import { getProfissionais } from "@/libs/api";
 import type { Profissional } from "@/libs/api";
 
-// Simula busca do usuário logado (você pode trocar depois por autenticação real)
-async function getCurrentUser() {
-  // Exemplo: busca do cookie/session/token
-  // Aqui vamos simular um usuário admin logado
-  return {
-    nome: "Administrador",
-    role: "admin", // ou "user"
+export default function HomePage() {
+  const [profissionais, setProfissionais] = useState<Profissional[]>([]);
+  const [user, setUser] = useState<{ nome: string; role: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setUser({ nome: "Administrador", role: "admin" });
+  }, []);
+
+  useEffect(() => {
+    async function fetchProfissionais() {
+      try {
+        const result = await getProfissionais();
+        setProfissionais(result);
+      } catch (error) {
+        console.error("Erro ao buscar profissionais:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProfissionais();
+  }, []);
+
+  const handleDelete = async (id: number, nome: string) => {
+    const confirmDelete = confirm(`Tem certeza que deseja excluir o médico ${nome}?`);
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`http://localhost:3333/medicos/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao excluir médico");
+      alert("Médico excluído com sucesso!");
+      setProfissionais((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao excluir médico.");
+    }
   };
-}
 
-export default async function HomePage() {
-  let profissionais: Profissional[] = [];
-  let currentUser: { nome: string; role: string } | null = null;
-
-  try {
-    [profissionais, currentUser] = await Promise.all([
-      getProfissionais(),
-      getCurrentUser(),
-    ]);
-  } catch (error) {
-    console.error("Erro ao buscar profissionais:", error);
+  if (loading) {
+    return (
+      <PageLayout title="Carregando..." subtitle="Buscando médicos disponíveis.">
+        <div className="flex justify-center items-center h-64">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-teal-500 border-t-transparent" />
+        </div>
+      </PageLayout>
+    );
   }
 
   return (
@@ -33,35 +60,36 @@ export default async function HomePage() {
       title="Agende sua Consulta"
       subtitle="Encontre os melhores profissionais de forma rápida, fácil e online."
     >
-      <div className="relative max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-          Medicos Disponiveis
-        </h2>
+      <div className="relative max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-10">
+          <h2 className="text-4xl font-extrabold text-gray-800 tracking-tight">
+            Médicos Disponíveis
+          </h2>
 
-        {/* 🔹 Botão de adicionar novo médico (visível só para admin) */}
-        {currentUser?.role === "admin" && (
-          <Link
-            href="/medicos/novo"
-            className="absolute top-0 right-0 bg-teal-600 text-white rounded-full w-12 h-12 flex items-center justify-center text-3xl font-bold shadow-lg hover:bg-teal-700 transition"
-            title="Cadastrar novo médico"
-          >
-            +
-          </Link>
-        )}
+          {user?.role === "admin" && (
+            <Link
+              href="/medicos/novo"
+              className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-full w-14 h-14 flex items-center justify-center text-4xl font-bold shadow-lg hover:shadow-teal-400/40 hover:scale-110 transition-all duration-300"
+              title="Cadastrar novo médico"
+            >
+              +
+            </Link>
+          )}
+        </div>
 
         {profissionais.length === 0 ? (
-          <p className="text-center text-gray-600">
+          <p className="text-center text-gray-500 text-lg">
             Nenhum profissional disponível no momento.
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
             {profissionais.map((prof) => (
-              <Link
+              <div
                 key={prof.id}
-                href={`/agendamento/${prof.id}`}
-                className="group"
+                className="relative bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-300"
               >
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                {/* Imagem do médico */}
+                <div className="relative">
                   <Image
                     src={prof.fotoUrl || "/placeholder.jpg"}
                     alt={`Foto de ${prof.nome}`}
@@ -70,19 +98,46 @@ export default async function HomePage() {
                     className="w-full h-56 object-cover"
                     priority
                   />
-                  <div className="p-6">
-                    <h3 className="text-2xl font-semibold text-gray-900">
-                      {prof.nome}
-                    </h3>
-                    <p className="text-blue-600 font-medium">
-                      {prof.especialidade}
-                    </p>
-                    <div className="text-right mt-4 text-blue-500 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                      Agendar →
-                    </div>
+                  <div className="absolute top-4 right-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md">
+                    {prof.especialidade}
                   </div>
                 </div>
-              </Link>
+
+                {/* Conteúdo */}
+                <div className="p-6 space-y-3">
+                  <h3 className="text-2xl font-bold text-gray-900 truncate">{prof.nome}</h3>
+                  <p className="text-sm text-gray-500 font-medium">CRM: {prof.crm}</p>
+
+                  <div className="flex justify-between items-center mt-5">
+                    <Link
+                      href={`/agendamento/${prof.id}`}
+                      className="text-teal-600 font-semibold hover:text-teal-700 transition-colors text-sm"
+                    >
+                      Agendar →
+                    </Link>
+
+                    {user?.role === "admin" && (
+                      <div className="flex gap-2">
+                        {/* Botão editar */}
+                        <Link
+                          href={`/medicos/${prof.id}/editar`}
+                          className="flex items-center gap-2 bg-teal-500 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:bg-teal-600 hover:shadow-lg transition-all"
+                        >
+                          ✏️ <span>Editar</span>
+                        </Link>
+
+                        {/* Botão excluir */}
+                        <button
+                          onClick={() => handleDelete(prof.id, prof.nome)}
+                          className="flex items-center gap-2 bg-rose-500 text-white text-sm px-4 py-2 rounded-lg shadow-md hover:bg-rose-600 hover:shadow-lg transition-all"
+                        >
+                          🗑️ <span>Excluir</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}

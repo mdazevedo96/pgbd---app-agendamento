@@ -17,15 +17,11 @@ export class AgendamentosService {
 
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
-  ) {}
+  ) { }
 
   async create(dto: CreateAgendamentoDto) {
-    const medico = await this.medicoRepo.findOne({
-      where: { id: dto.medicoId },
-    });
-    const usuario = await this.usuarioRepo.findOne({
-      where: { id: dto.usuarioId },
-    });
+    const medico = await this.medicoRepo.findOne({ where: { id: dto.medicoId } });
+    const usuario = await this.usuarioRepo.findOne({ where: { id: dto.usuarioId } });
 
     if (!medico || !usuario) {
       throw new BadRequestException('Médico ou usuário não encontrado');
@@ -59,12 +55,9 @@ export class AgendamentosService {
 
   async update(id: number, dto: CreateAgendamentoDto) {
     const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
-    if (!agendamento)
-      throw new BadRequestException('Agendamento não encontrado');
+    if (!agendamento) throw new BadRequestException('Agendamento não encontrado');
 
-    const medico = await this.medicoRepo.findOne({
-      where: { id: dto.medicoId },
-    });
+    const medico = await this.medicoRepo.findOne({ where: { id: dto.medicoId } });
     if (!medico) throw new BadRequestException('Médico não encontrado');
 
     const dataHora = new Date(dto.dataHora);
@@ -96,24 +89,25 @@ export class AgendamentosService {
     const medico = await this.medicoRepo.findOne({ where: { id: medicoId } });
     if (!medico) throw new BadRequestException('Médico não encontrado');
 
-    if (
-      !medico.horariosDisponiveis ||
-      medico.horariosDisponiveis.length === 0
-    ) {
-      throw new BadRequestException(
-        'Este médico ainda não definiu horários disponíveis',
-      );
+    if (!medico.horariosDisponiveis || medico.horariosDisponiveis.length === 0) {
+      throw new BadRequestException('Este médico ainda não definiu horários disponíveis');
     }
 
-    const dataBusca = data ? new Date(data) : new Date();
+    const dataBusca = data ? new Date(`${data}T00:00:00`) : new Date();
+
     const diaSemana = dataBusca.getDay();
 
     if (diaSemana === 0 || diaSemana === 6) {
-      return { medicoId, data: dataBusca, horariosDisponiveis: [] };
+      return {
+        medicoId,
+        data: dataBusca.toISOString().split('T')[0],
+        horariosDisponiveis: [],
+      };
     }
 
     const inicio = new Date(dataBusca);
     inicio.setHours(0, 0, 0, 0);
+
     const fim = new Date(dataBusca);
     fim.setHours(23, 59, 59, 999);
 
@@ -121,13 +115,12 @@ export class AgendamentosService {
       where: { medico: { id: medico.id }, dataHora: Between(inicio, fim) },
     });
 
-    const ocupados = agendamentos.map((a) =>
-      a.dataHora.toISOString().substring(11, 16),
-    );
+    const ocupados = agendamentos.map((a) => {
+      const dataLocal = new Date(a.dataHora);
+      return dataLocal.toTimeString().substring(0, 5);
+    });
 
-    const livres = medico.horariosDisponiveis.filter(
-      (h) => !ocupados.includes(h),
-    );
+    const livres = medico.horariosDisponiveis.filter((h) => !ocupados.includes(h));
 
     return {
       medicoId,
@@ -154,7 +147,6 @@ export class AgendamentosService {
   async remove(id: number) {
     return this.agendamentoRepo.delete(id);
   }
-
   async atualizarStatus(id: number, status: StatusAgendamento) {
     const agendamento = await this.agendamentoRepo.findOne({
       where: { id },
