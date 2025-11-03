@@ -22,7 +22,11 @@ export default function Header() {
           Home
         </Link>
         <Link href="/medicos" className="text-white text-lg font-semibold hover:underline">
-          Medicos
+          Médicos
+        </Link>
+
+        <Link href="/usuarios" className="text-white text-lg font-semibold hover:underline">
+          Usuários
         </Link>
 
         {usuarioId ? (

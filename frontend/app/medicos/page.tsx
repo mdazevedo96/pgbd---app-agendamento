@@ -9,7 +9,7 @@ import type { Profissional } from "@/libs/api";
 
 export default function HomePage() {
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
-  const [user, setUser] = useState<{ nome: string; role: string } | null>(null);
+  const [user, setUser] = useState<{ nome: string; nivel: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function HomePage() {
             Médicos Disponíveis
           </h2>
 
-          {user?.role === "admin" && (
+          {user?.nivel === "admin" && (
             <Link
               href="/medicos/novo"
               className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-full w-14 h-14 flex items-center justify-center text-4xl font-bold shadow-lg hover:shadow-teal-400/40 hover:scale-110 transition-all duration-300"
@@ -122,7 +122,7 @@ export default function HomePage() {
                         Agendar → 
                       </Link>
 
-                    {user?.role === "admin" && (
+                    {user?.nivel === "admin" && (
                       <div className="flex gap-2">
                         {/* Botão editar */}
                         <Link
