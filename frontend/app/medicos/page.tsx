@@ -105,7 +105,7 @@ export default function HomePage() {
             </button>
 
             {/* Botão "+" aparece somente para admins */}
-            {user?.role === "admin" && (
+            {user?.nivel === "admin" && (
               <Link
                 href="/medicos/novo"
                 className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-full w-14 h-14 flex items-center justify-center text-4xl font-bold shadow-lg hover:shadow-teal-400/40 hover:scale-110 transition-all duration-300"
