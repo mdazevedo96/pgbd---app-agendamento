@@ -17,7 +17,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
     <main className="min-h-screen bg-gray-50">
       {shouldRenderHeader && <Header />}
 
-      <section className="pt-30 px-4">
+      <section className={pathname === "/login" ? "" : "pt-30 px-4"}>
         {children}
       </section>
     </main>
