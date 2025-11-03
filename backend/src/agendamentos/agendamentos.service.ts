@@ -17,11 +17,15 @@ export class AgendamentosService {
 
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
-  ) { }
+  ) {}
 
   async create(dto: CreateAgendamentoDto) {
-    const medico = await this.medicoRepo.findOne({ where: { id: dto.medicoId } });
-    const usuario = await this.usuarioRepo.findOne({ where: { id: dto.usuarioId } });
+    const medico = await this.medicoRepo.findOne({
+      where: { id: dto.medicoId },
+    });
+    const usuario = await this.usuarioRepo.findOne({
+      where: { id: dto.usuarioId },
+    });
 
     if (!medico || !usuario) {
       throw new BadRequestException('Médico ou usuário não encontrado');
@@ -55,9 +59,12 @@ export class AgendamentosService {
 
   async update(id: number, dto: CreateAgendamentoDto) {
     const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
-    if (!agendamento) throw new BadRequestException('Agendamento não encontrado');
+    if (!agendamento)
+      throw new BadRequestException('Agendamento não encontrado');
 
-    const medico = await this.medicoRepo.findOne({ where: { id: dto.medicoId } });
+    const medico = await this.medicoRepo.findOne({
+      where: { id: dto.medicoId },
+    });
     if (!medico) throw new BadRequestException('Médico não encontrado');
 
     const dataHora = new Date(dto.dataHora);
@@ -89,8 +96,13 @@ export class AgendamentosService {
     const medico = await this.medicoRepo.findOne({ where: { id: medicoId } });
     if (!medico) throw new BadRequestException('Médico não encontrado');
 
-    if (!medico.horariosDisponiveis || medico.horariosDisponiveis.length === 0) {
-      throw new BadRequestException('Este médico ainda não definiu horários disponíveis');
+    if (
+      !medico.horariosDisponiveis ||
+      medico.horariosDisponiveis.length === 0
+    ) {
+      throw new BadRequestException(
+        'Este médico ainda não definiu horários disponíveis',
+      );
     }
 
     const dataBusca = data ? new Date(data) : new Date();
@@ -109,9 +121,13 @@ export class AgendamentosService {
       where: { medico: { id: medico.id }, dataHora: Between(inicio, fim) },
     });
 
-    const ocupados = agendamentos.map((a) => a.dataHora.toISOString().substring(11, 16));
+    const ocupados = agendamentos.map((a) =>
+      a.dataHora.toISOString().substring(11, 16),
+    );
 
-    const livres = medico.horariosDisponiveis.filter((h) => !ocupados.includes(h));
+    const livres = medico.horariosDisponiveis.filter(
+      (h) => !ocupados.includes(h),
+    );
 
     return {
       medicoId,
@@ -137,5 +153,19 @@ export class AgendamentosService {
 
   async remove(id: number) {
     return this.agendamentoRepo.delete(id);
+  }
+
+  async atualizarStatus(id: number, status: StatusAgendamento) {
+    const agendamento = await this.agendamentoRepo.findOne({
+      where: { id },
+      relations: ['medico', 'usuario'], // opcional, caso queira retornar com as relações
+    });
+
+    if (!agendamento) {
+      throw new BadRequestException('Agendamento não encontrado');
+    }
+
+    agendamento.status = status;
+    return this.agendamentoRepo.save(agendamento);
   }
 }

@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Query, Patch } from '@nestjs/common';
 import { AgendamentosService } from './agendamentos.service';
 import { CreateAgendamentoDto } from './dto/create-agendamento.dto';
+import { StatusAgendamento } from './entities/agendamento.entity';
 
 @Controller('agendamentos')
 export class AgendamentosController {
-  constructor(private readonly agendamentosService: AgendamentosService) { }
+  constructor(private readonly agendamentosService: AgendamentosService) {}
 
   @Post()
   async create(@Body() dto: CreateAgendamentoDto) {
@@ -19,7 +20,6 @@ export class AgendamentosController {
     return this.agendamentosService.getHorariosDisponiveis(medicoId, data);
   }
 
-
   @Get()
   async findAll() {
     return this.agendamentosService.findAll();
@@ -33,5 +33,14 @@ export class AgendamentosController {
   @Delete(':id')
   async remove(@Param('id') id: number) {
     return this.agendamentosService.remove(id);
+  }
+
+  // Nova rota PATCH para atualizar status
+  @Patch(':id/status')
+  async atualizarStatus(
+    @Param('id') id: number,
+    @Body('status') status: StatusAgendamento, // 'pendente' | 'confirmado' | 'cancelado'
+  ) {
+    return this.agendamentosService.atualizarStatus(id, status);
   }
 }
