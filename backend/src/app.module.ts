@@ -6,6 +6,7 @@ import { MedicosModule } from './medicos/medicos.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
 import { AgendamentosModule } from './agendamentos/agendamentos.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AgendamentosModule } from './agendamentos/agendamentos.module';
       logging: true,
     }),
     MedicosModule,
+    ScheduleModule.forRoot(),
     UsuariosModule,
     AuthModule,
     AgendamentosModule,

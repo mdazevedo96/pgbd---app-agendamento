@@ -1,13 +1,17 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { Agendamento, StatusAgendamento } from './entities/agendamento.entity';
 import { CreateAgendamentoDto } from './dto/create-agendamento.dto';
 import { Usuario } from 'src/usuarios/entities/usuario.entity';
 import { Medico } from 'src/medicos/entities/medico.entity';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class AgendamentosService {
+
+  private readonly logger = new Logger(AgendamentosService.name);
+
   constructor(
     @InjectRepository(Agendamento)
     private agendamentoRepo: Repository<Agendamento>,
@@ -17,7 +21,7 @@ export class AgendamentosService {
 
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
-  ) {}
+  ) { }
 
   async create(dto: CreateAgendamentoDto) {
     const medico = await this.medicoRepo.findOne({
@@ -34,7 +38,12 @@ export class AgendamentosService {
     const dataHora = new Date(dto.dataHora);
 
     const agendamentoExistente = await this.agendamentoRepo.findOne({
-      where: { usuario: { id: usuario.id }, medico: { id: medico.id } },
+      where: {
+        usuario: { id: usuario.id },
+        medico: { id: medico.id },
+        status: In([StatusAgendamento.PENDENTE, StatusAgendamento.CONFIRMADO]),
+        finalizado: false,
+      },
     });
 
     if (agendamentoExistente) {
@@ -227,5 +236,21 @@ export class AgendamentosService {
 
     agendamento.status = status;
     return this.agendamentoRepo.save(agendamento);
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async finalizarConsultasAntigas() {
+    const result = await this.agendamentoRepo
+      .createQueryBuilder()
+      .update(Agendamento)
+      .set({ finalizado: true })
+      .where('dataHora < NOW()')
+      .andWhere('status = :status', { status: StatusAgendamento.CONFIRMADO })
+      .andWhere('finalizado = false')
+      .execute();
+
+    if (result.affected && result.affected > 0) {
+      this.logger.log(`🕐 ${result.affected} agendamentos finalizados automaticamente.`);
+    }
   }
 }

@@ -13,6 +13,7 @@ type Agendamento = {
   dataHora: string;
   servico: string;
   status: "pendente" | "confirmado" | "cancelado";
+  finalizado?: boolean;
   medico: Medico;
   usuario?: Usuario;
 };
@@ -22,7 +23,6 @@ export default function AgendamentosPage() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtros
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const [medicoNome, setMedicoNome] = useState("");
   const [usuarioNome, setUsuarioNome] = useState("");
@@ -46,23 +46,21 @@ export default function AgendamentosPage() {
     try {
       setLoading(true);
 
-      let url = `${API_URL}/agendamentos`;
+      let url = `${API_URL}/agendamentos?finalizado=false`; // ✅ só mostra não finalizados
       const params = new URLSearchParams();
 
       if (usuario.nivel === "admin") {
-        // Corrigido: enviar nomes, não IDs
         if (filtros?.medico) params.append("medicoNome", filtros.medico);
         if (filtros?.usuario) params.append("usuarioNome", filtros.usuario);
         if (filtros?.status) params.append("status", filtros.status);
         if (filtros?.data) params.append("data", filtros.data);
       } else {
-        // Usuário normal: só pega seus próprios agendamentos
-        url = `${API_URL}/agendamentos/usuario/${usuario.id}`;
+        url = `${API_URL}/agendamentos/usuario/${usuario.id}?finalizado=false`;
         if (filtros?.status) params.append("status", filtros.status);
         if (filtros?.data) params.append("data", filtros.data);
       }
 
-      if (params.toString()) url += `?${params.toString()}`;
+      if (params.toString()) url += `&${params.toString()}`;
 
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -100,7 +98,37 @@ export default function AgendamentosPage() {
     fetchAgendamentos();
   };
 
-  function renderStatus(status: Agendamento["status"]) {
+  const atualizarStatus = async (id: number, novoStatus: "confirmado" | "cancelado") => {
+    try {
+      const res = await fetch(`${API_URL}/agendamentos/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+
+      if (!res.ok) throw new Error("Erro ao atualizar status");
+
+      setAgendamentos((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: novoStatus } : a))
+      );
+    } catch (err) {
+      console.error("Erro ao atualizar agendamento:", err);
+      alert("Falha ao atualizar o status do agendamento.");
+    }
+  };
+
+  function renderStatus(status: Agendamento["status"], finalizado?: boolean) {
+    if (finalizado) {
+      return (
+        <>
+          <CheckCircleIcon className="inline w-5 h-5 text-blue-500 mr-1" />
+          <span className="text-blue-600 font-semibold">Finalizado</span>
+        </>
+      );
+    }
     switch (status) {
       case "pendente":
         return <ClockIcon className="inline w-5 h-5 text-yellow-500 mr-1" />;
@@ -125,14 +153,13 @@ export default function AgendamentosPage() {
   return (
     <PageLayout
       title="Agendamentos"
-      subtitle={usuario?.nivel === "admin" ? "Todos os agendamentos" : "Meus agendamentos"}
+      subtitle={usuario?.nivel === "admin" ? "Todos os agendamentos ativos" : "Meus agendamentos ativos"}
     >
-      {/* Cabeçalho e botão de filtro */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Agendamentos</h2>
 
         <button
-          onClick={() => setFiltrosAbertos(prev => !prev)}
+          onClick={() => setFiltrosAbertos((prev) => !prev)}
           className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-teal-400/40 hover:scale-110 transition-all duration-300"
           title="Filtros"
         >
@@ -140,7 +167,6 @@ export default function AgendamentosPage() {
         </button>
       </div>
 
-      {/* Painel de filtros */}
       {filtrosAbertos && (
         <div className="bg-white p-6 rounded-xl shadow mb-8 border border-gray-100 transition-all">
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
@@ -148,7 +174,7 @@ export default function AgendamentosPage() {
               type="text"
               placeholder="Filtrar por médico"
               value={medicoNome}
-              onChange={e => setMedicoNome(e.target.value)}
+              onChange={(e) => setMedicoNome(e.target.value)}
               className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500"
             />
             {usuario?.nivel === "admin" && (
@@ -156,13 +182,13 @@ export default function AgendamentosPage() {
                 type="text"
                 placeholder="Filtrar por paciente"
                 value={usuarioNome}
-                onChange={e => setUsuarioNome(e.target.value)}
+                onChange={(e) => setUsuarioNome(e.target.value)}
                 className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500"
               />
             )}
             <select
               value={statusFiltro}
-              onChange={e => setStatusFiltro(e.target.value as any)}
+              onChange={(e) => setStatusFiltro(e.target.value as any)}
               className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500"
             >
               <option value="">Todos os status</option>
@@ -173,7 +199,7 @@ export default function AgendamentosPage() {
             <input
               type="date"
               value={dataFiltro}
-              onChange={e => setDataFiltro(e.target.value)}
+              onChange={(e) => setDataFiltro(e.target.value)}
               className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500"
             />
           </div>
@@ -194,7 +220,6 @@ export default function AgendamentosPage() {
         </div>
       )}
 
-      {/* Lista de agendamentos */}
       {loading ? (
         <p className="text-center text-lg">Carregando agendamentos...</p>
       ) : agendamentos.length === 0 ? (
@@ -204,7 +229,10 @@ export default function AgendamentosPage() {
           {agendamentos.map((agendamento) => {
             const dataObj = new Date(agendamento.dataHora);
             const dataFormatada = dataObj.toLocaleDateString("pt-BR");
-            const horaFormatada = dataObj.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            const horaFormatada = dataObj.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
 
             return (
               <div
@@ -217,19 +245,29 @@ export default function AgendamentosPage() {
                     <span className="font-semibold">Paciente:</span> {agendamento.usuario.nome}
                   </p>
                 )}
-                <p className="text-gray-700">
-                  <span className="font-semibold">Data:</span> {dataFormatada}
+                <p className="text-gray-700"><span className="font-semibold">Data:</span> {dataFormatada}</p>
+                <p className="text-gray-700"><span className="font-semibold">Horário:</span> {horaFormatada}</p>
+                <p className="text-gray-700"><span className="font-semibold">Serviço:</span> {agendamento.servico}</p>
+                <p className="text-gray-700 flex items-center mb-4">
+                  <span className="font-semibold mr-1">Status:</span> {renderStatus(agendamento.status, agendamento.finalizado)}
                 </p>
-                <p className="text-gray-700">
-                  <span className="font-semibold">Horário:</span> {horaFormatada}
-                </p>
-                <p className="text-gray-700">
-                  <span className="font-semibold">Serviço:</span> {agendamento.servico}
-                </p>
-                <p className="text-gray-700 flex items-center">
-                  <span className="font-semibold mr-1">Status:</span> {renderStatus(agendamento.status)}{" "}
-                  {agendamento.status.charAt(0).toUpperCase() + agendamento.status.slice(1)}
-                </p>
+
+                {usuario?.nivel === "admin" && agendamento.status === "pendente" && (
+                  <div className="flex gap-3 mt-3">
+                    <button
+                      onClick={() => atualizarStatus(agendamento.id, "confirmado")}
+                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
+                    >
+                      Aceitar
+                    </button>
+                    <button
+                      onClick={() => atualizarStatus(agendamento.id, "cancelado")}
+                      className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+                    >
+                      Recusar
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

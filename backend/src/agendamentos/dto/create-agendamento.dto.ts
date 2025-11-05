@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsString, IsNumber, IsDateString, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
 import { StatusAgendamento } from '../entities/agendamento.entity';
 
 export class CreateAgendamentoDto {
@@ -18,4 +26,8 @@ export class CreateAgendamentoDto {
   @IsEnum(StatusAgendamento)
   @IsOptional()
   status?: StatusAgendamento;
+
+  @IsBoolean()
+  @IsOptional()
+  finalizado?: boolean;
 }
