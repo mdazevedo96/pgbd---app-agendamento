@@ -26,8 +26,4 @@ export class CreateAgendamentoDto {
   @IsEnum(StatusAgendamento)
   @IsOptional()
   status?: StatusAgendamento;
-
-  @IsBoolean()
-  @IsOptional()
-  finalizado?: boolean;
 }

@@ -39,7 +39,4 @@ export class Agendamento {
     default: StatusAgendamento.PENDENTE,
   })
   status: StatusAgendamento;
-
-  @Column({ type: 'boolean', default: false })
-  finalizado: boolean;
 }

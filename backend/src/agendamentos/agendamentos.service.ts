@@ -6,10 +6,10 @@ import { CreateAgendamentoDto } from './dto/create-agendamento.dto';
 import { Usuario } from 'src/usuarios/entities/usuario.entity';
 import { Medico } from 'src/medicos/entities/medico.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { HistoricoAgendamento } from 'src/historico-agendamentos/entities/historico-agendamento.entity';
 
 @Injectable()
 export class AgendamentosService {
-
   private readonly logger = new Logger(AgendamentosService.name);
 
   constructor(
@@ -21,8 +21,12 @@ export class AgendamentosService {
 
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
+
+    @InjectRepository(HistoricoAgendamento)
+    private historicoRepo: Repository<HistoricoAgendamento>, // ✅ Repositório do histórico
   ) { }
 
+  // 🟢 Criar agendamento
   async create(dto: CreateAgendamentoDto) {
     const medico = await this.medicoRepo.findOne({
       where: { id: dto.medicoId },
@@ -37,21 +41,22 @@ export class AgendamentosService {
 
     const dataHora = new Date(dto.dataHora);
 
+    // Impede agendar duplicado para o mesmo médico/usuário ativo
     const agendamentoExistente = await this.agendamentoRepo.findOne({
       where: {
         usuario: { id: usuario.id },
         medico: { id: medico.id },
         status: In([StatusAgendamento.PENDENTE, StatusAgendamento.CONFIRMADO]),
-        finalizado: false,
       },
     });
 
     if (agendamentoExistente) {
       throw new BadRequestException(
-        'O usuário já tem um agendamento com este médico',
+        'O usuário já possui um agendamento com este médico.',
       );
     }
 
+    // Impede conflito de horário
     const existeAgendamento = await this.agendamentoRepo.findOne({
       where: { medico: { id: medico.id }, dataHora },
     });
@@ -73,6 +78,7 @@ export class AgendamentosService {
     return this.agendamentoRepo.save(agendamento);
   }
 
+  // 🟡 Atualizar agendamento
   async update(id: number, dto: CreateAgendamentoDto) {
     const agendamento = await this.agendamentoRepo.findOne({ where: { id } });
     if (!agendamento)
@@ -104,14 +110,12 @@ export class AgendamentosService {
     return this.agendamentoRepo.save(agendamento);
   }
 
+  // 🕒 Buscar horários disponíveis
   async getHorariosDisponiveis(medicoId: number, data?: string) {
     const medico = await this.medicoRepo.findOne({ where: { id: medicoId } });
     if (!medico) throw new BadRequestException('Médico não encontrado');
 
-    if (
-      !medico.horariosDisponiveis ||
-      medico.horariosDisponiveis.length === 0
-    ) {
+    if (!medico.horariosDisponiveis || medico.horariosDisponiveis.length === 0) {
       throw new BadRequestException(
         'Este médico ainda não definiu horários disponíveis',
       );
@@ -152,6 +156,7 @@ export class AgendamentosService {
     };
   }
 
+  // 🔍 Buscar todos
   async findAll(filters?: {
     usuarioId?: number;
     medicoId?: number;
@@ -166,15 +171,11 @@ export class AgendamentosService {
       .leftJoinAndSelect('agendamento.usuario', 'usuario');
 
     if (filters?.usuarioId)
-      query.andWhere('usuario.id = :usuarioId', {
-        usuarioId: filters.usuarioId,
-      });
+      query.andWhere('usuario.id = :usuarioId', { usuarioId: filters.usuarioId });
     if (filters?.medicoId)
       query.andWhere('medico.id = :medicoId', { medicoId: filters.medicoId });
     if (filters?.status)
-      query.andWhere('agendamento.status = :status', {
-        status: filters.status,
-      });
+      query.andWhere('agendamento.status = :status', { status: filters.status });
     if (filters?.data) {
       const inicio = new Date(`${filters.data}T00:00:00`);
       const fim = new Date(`${filters.data}T23:59:59`);
@@ -195,19 +196,15 @@ export class AgendamentosService {
     return query.orderBy('agendamento.dataHora', 'ASC').getMany();
   }
 
-  async findByUser(
-    usuarioId: number,
-    filters?: { status?: StatusAgendamento; data?: string },
-  ) {
+  // 🔍 Buscar agendamentos de um usuário
+  async findByUser(usuarioId: number, filters?: { status?: StatusAgendamento; data?: string }) {
     const query = this.agendamentoRepo
       .createQueryBuilder('agendamento')
       .leftJoinAndSelect('agendamento.medico', 'medico')
       .where('agendamento.usuarioId = :usuarioId', { usuarioId });
 
     if (filters?.status)
-      query.andWhere('agendamento.status = :status', {
-        status: filters.status,
-      });
+      query.andWhere('agendamento.status = :status', { status: filters.status });
 
     if (filters?.data) {
       const inicio = new Date(`${filters.data}T00:00:00`);
@@ -221,10 +218,12 @@ export class AgendamentosService {
     return query.orderBy('agendamento.dataHora', 'ASC').getMany();
   }
 
+  // ❌ Remover agendamento manualmente
   async remove(id: number) {
     return this.agendamentoRepo.delete(id);
   }
 
+  // 🔁 Atualizar status (confirmar / cancelar)
   async atualizarStatus(id: number, status: StatusAgendamento) {
     const agendamento = await this.agendamentoRepo.findOne({
       where: { id },
@@ -238,19 +237,35 @@ export class AgendamentosService {
     return this.agendamentoRepo.save(agendamento);
   }
 
+  // 🕐 CRON: roda à meia-noite — move agendamentos passados para o histórico e apaga da tabela principal
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async finalizarConsultasAntigas() {
-    const result = await this.agendamentoRepo
-      .createQueryBuilder()
-      .update(Agendamento)
-      .set({ finalizado: true })
-      .where('dataHora < NOW()')
-      .andWhere('status = :status', { status: StatusAgendamento.CONFIRMADO })
-      .andWhere('finalizado = false')
-      .execute();
+  async moverAgendamentosParaHistorico() {
+    const agendamentosAntigos = await this.agendamentoRepo
+      .createQueryBuilder('agendamento')
+      .leftJoinAndSelect('agendamento.medico', 'medico')
+      .leftJoinAndSelect('agendamento.usuario', 'usuario')
+      .where('agendamento.dataHora < NOW()')
+      .getMany();
 
-    if (result.affected && result.affected > 0) {
-      this.logger.log(`🕐 ${result.affected} agendamentos finalizados automaticamente.`);
+    if (agendamentosAntigos.length === 0) {
+      this.logger.log('🕐 Nenhum agendamento para mover para o histórico hoje.');
+      return;
     }
+
+    for (const ag of agendamentosAntigos) {
+      await this.historicoRepo.save({
+        medicoNome: ag.medico.nome,
+        usuarioNome: ag.usuario.nome,
+        dataHora: ag.dataHora,
+        servico: ag.servico,
+        status: ag.status,
+      });
+
+      await this.agendamentoRepo.delete(ag.id);
+    }
+
+    this.logger.log(
+      `🕐 ${agendamentosAntigos.length} agendamentos movidos para o histórico e removidos da tabela principal.`,
+    );
   }
 }

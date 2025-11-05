@@ -44,13 +44,6 @@ export default function ProfissionalDetalhePage() {
     }
   }, [profissionalId]);
 
-  // Serviços (pode vir do backend depois)
-  const servicos = [
-    { nome: "Consulta Inicial", duracao: 60, preco: 150 },
-    { nome: "Retorno", duracao: 30, preco: 0 },
-    { nome: "Acompanhamento", duracao: 45, preco: 100 },
-  ];
-
   // 🔹 Quando selecionar uma data, busca horários livres no backend
   useEffect(() => {
     async function fetchHorarios() {
@@ -81,8 +74,8 @@ export default function ProfissionalDetalhePage() {
 
   // 🔹 Criar agendamento
   const handleAgendar = async () => {
-    if (!selectedServico || !selectedDate || !selectedTime) {
-      setMessage("⚠️ Selecione serviço, data e horário.");
+    if (!selectedDate || !selectedTime) {
+      setMessage("⚠️ Selecione a data e o horário da consulta.");
       return;
     }
 
@@ -113,10 +106,10 @@ export default function ProfissionalDetalhePage() {
         medicoId: profissionalId,
         usuarioId,
         dataHora: dataHoraFormatada,
-        servico: selectedServico,
+        servico: "Consulta",
       });
 
-      setMessage("✅ Agendamento realizado com sucesso!");
+      setMessage("✅ Consulta agendada com sucesso!");
       setTimeout(() => router.push("/home"), 1200);
     } catch (err: any) {
       setMessage(err.message || "Erro ao criar agendamento.");
@@ -135,33 +128,41 @@ export default function ProfissionalDetalhePage() {
     );
   }
 
+  // 🔹 Filtro de horários passados no dia atual
+  const agora = new Date();
+  const dataHoje = agora.toISOString().split("T")[0];
+
+  let horariosFiltrados = horariosDisponiveis;
+  let todosHorariosPassados = false;
+
+  if (selectedDate) {
+    const dataSelecionada = format(selectedDate, "yyyy-MM-dd");
+    if (dataSelecionada === dataHoje) {
+      const horaAtual = agora.toTimeString().substring(0, 5);
+      horariosFiltrados = horariosDisponiveis.filter((h) => h > horaAtual);
+      if (horariosFiltrados.length === 0) todosHorariosPassados = true;
+    }
+  }
+
   return (
     <PageLayout
       title={`Agendar com ${profissional.nome}`}
       subtitle={profissional.especialidade}
     >
       <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-xl space-y-8">
-
-        {/* 1. Serviço */}
+        {/* 1. Tipo de Consulta */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">1. Escolha o Serviço</h2>
-          <div className="space-y-3">
-            {servicos.map((s) => (
-              <button
-                key={s.nome}
-                onClick={() => setSelectedServico(s.nome)}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${selectedServico === s.nome
-                  ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300"
-                  : "bg-white border-gray-300 hover:border-gray-400"
-                  }`}
-              >
-                <div className="font-semibold text-gray-900">{s.nome}</div>
-                <div className="text-sm text-gray-600">
-                  Duração: {s.duracao} min | R$ {s.preco.toFixed(2)}
-                </div>
-              </button>
-            ))}
-          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">1. Tipo de Consulta</h2>
+          <button
+            onClick={() => setSelectedServico("Consulta")}
+            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+              selectedServico === "Consulta"
+                ? "bg-blue-100 border-blue-500 ring-2 ring-blue-300"
+                : "bg-white border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            <div className="font-semibold text-gray-900 text-lg">Consulta</div>
+          </button>
         </div>
 
         {/* 2. Data */}
@@ -191,20 +192,27 @@ export default function ProfissionalDetalhePage() {
 
             {loadingHorarios ? (
               <div className="text-center text-gray-500">Carregando horários...</div>
-            ) : horariosDisponiveis.length === 0 ? (
+            ) : todosHorariosPassados ? (
+              <div className="text-center bg-yellow-100 border border-yellow-400 text-yellow-800 p-4 rounded-lg font-medium shadow-sm">
+                ⚠️ O expediente para hoje já encerrou.  
+                <br />
+                Escolha outro dia para agendar sua consulta.
+              </div>
+            ) : horariosFiltrados.length === 0 ? (
               <div className="text-center text-gray-500">
-                Nenhum horário disponível neste dia.
+                Nenhum horário disponível para este dia.
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-3">
-                {horariosDisponiveis.map((h) => (
+                {horariosFiltrados.map((h) => (
                   <button
                     key={h}
                     onClick={() => setSelectedTime(h)}
-                    className={`p-3 rounded-lg border-2 font-semibold transition-all ${selectedTime === h
-                      ? "bg-blue-500 text-white border-blue-700"
-                      : "bg-white border-gray-300 hover:bg-gray-100 text-gray-800"
-                      }`}
+                    className={`p-3 rounded-lg border-2 font-semibold transition-all ${
+                      selectedTime === h
+                        ? "bg-blue-500 text-white border-blue-700"
+                        : "bg-white border-gray-300 hover:bg-gray-100 text-gray-800"
+                    }`}
                   >
                     {h}
                   </button>
@@ -214,19 +222,18 @@ export default function ProfissionalDetalhePage() {
           </div>
         )}
 
-        {/* Mensagem */}
         {message && (
           <p
-            className={`mt-4 text-center text-sm p-3 rounded-lg ${message.includes("✅")
-              ? "bg-green-100 text-green-700"
-              : "bg-yellow-100 text-yellow-800"
-              }`}
+            className={`mt-4 text-center text-sm p-3 rounded-lg ${
+              message.includes("✅")
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
           >
             {message}
           </p>
         )}
 
-        {/* Botão */}
         {selectedServico && selectedDate && selectedTime && (
           <div>
             <button
