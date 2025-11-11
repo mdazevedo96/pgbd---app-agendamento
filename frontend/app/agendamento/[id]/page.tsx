@@ -23,7 +23,6 @@ export default function ProfissionalDetalhePage() {
   const [loading, setLoading] = useState(false);
   const [loadingHorarios, setLoadingHorarios] = useState(false);
 
-  // Usuário logado
   const [user, setUser] = useState<any | null>(null);
 
   useEffect(() => {
@@ -35,7 +34,6 @@ export default function ProfissionalDetalhePage() {
     }
   }, []);
 
-  // Carrega o profissional
   useEffect(() => {
     if (profissionalId) {
       getProfissional(profissionalId)
@@ -44,7 +42,6 @@ export default function ProfissionalDetalhePage() {
     }
   }, [profissionalId]);
 
-  // 🔹 Quando selecionar uma data, busca horários livres no backend
   useEffect(() => {
     async function fetchHorarios() {
       if (!selectedDate || !profissionalId) return;
@@ -72,7 +69,6 @@ export default function ProfissionalDetalhePage() {
     fetchHorarios();
   }, [selectedDate, profissionalId]);
 
-  // 🔹 Criar agendamento
   const handleAgendar = async () => {
     if (!selectedDate || !selectedTime) {
       setMessage("⚠️ Selecione a data e o horário da consulta.");
@@ -128,7 +124,6 @@ export default function ProfissionalDetalhePage() {
     );
   }
 
-  // 🔹 Filtro de horários passados no dia atual
   const agora = new Date();
   const dataHoje = agora.toISOString().split("T")[0];
 
@@ -150,7 +145,6 @@ export default function ProfissionalDetalhePage() {
       subtitle={profissional.especialidade}
     >
       <div className="max-w-3xl mx-auto p-6 bg-white shadow-md rounded-xl space-y-8">
-        {/* 1. Tipo de Consulta */}
         <div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">1. Tipo de Consulta</h2>
           <button
@@ -165,7 +159,6 @@ export default function ProfissionalDetalhePage() {
           </button>
         </div>
 
-        {/* 2. Data */}
         <div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">2. Escolha o Dia</h2>
           <DatePicker
@@ -183,7 +176,6 @@ export default function ProfissionalDetalhePage() {
           />
         </div>
 
-        {/* 3. Horário */}
         {selectedDate && (
           <div>
             <h2 className="text-2xl font-bold text-gray-800 mb-4">

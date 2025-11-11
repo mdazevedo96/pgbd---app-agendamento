@@ -9,11 +9,10 @@ export default function CadastroUsuarioPage() {
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
   const [senha, setSenha] = useState("");
-  const [nivel, setNivel] = useState("paciente"); // Nível do usuário (admin ou paciente)
+  const [nivel, setNivel] = useState("paciente");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Função de envio do formulário
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -35,9 +34,8 @@ export default function CadastroUsuarioPage() {
 
       if (!res.ok) throw new Error("Erro ao cadastrar usuário");
 
-      // Redirecionar após cadastro bem-sucedido
       alert("Usuário cadastrado com sucesso!");
-      router.push("/usuarios"); // Redireciona para a página de usuários
+      router.push("/usuarios");
     } catch (err) {
       setError("Erro ao cadastrar usuário.");
       console.error(err);
@@ -56,7 +54,6 @@ export default function CadastroUsuarioPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nome */}
           <div>
             <label htmlFor="nome" className="block text-sm font-semibold text-gray-700">
               Nome
@@ -71,7 +68,6 @@ export default function CadastroUsuarioPage() {
             />
           </div>
 
-          {/* CPF */}
           <div>
             <label htmlFor="cpf" className="block text-sm font-semibold text-gray-700">
               CPF
@@ -86,7 +82,6 @@ export default function CadastroUsuarioPage() {
             />
           </div>
 
-          {/* Senha */}
           <div>
             <label htmlFor="senha" className="block text-sm font-semibold text-gray-700">
               Senha
@@ -101,7 +96,6 @@ export default function CadastroUsuarioPage() {
             />
           </div>
 
-          {/* Nível */}
           <div>
             <label htmlFor="nivel" className="block text-sm font-semibold text-gray-700">
               Nível
@@ -117,7 +111,6 @@ export default function CadastroUsuarioPage() {
             </select>
           </div>
 
-          {/* Botões */}
           <div className="flex justify-between items-center">
             <button
               type="submit"

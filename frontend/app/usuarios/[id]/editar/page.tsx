@@ -17,7 +17,6 @@ export default function EditarUsuarioPage() {
 
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Buscar dados do usuário existente
   useEffect(() => {
     async function fetchUsuario() {
       try {
@@ -46,11 +45,9 @@ export default function EditarUsuarioPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 🔹 Atualizar usuário
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Se a senha estiver vazia, removemos antes do envio
     const payload = { ...form };
     if (!payload.senha.trim()) {
       delete payload.senha;
@@ -58,7 +55,7 @@ export default function EditarUsuarioPage() {
 
     try {
       const response = await fetch(`http://localhost:3333/usuarios/${usuarioId}`, {
-        method: "PUT", // ✅ compatível com seu controller
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -88,7 +85,6 @@ export default function EditarUsuarioPage() {
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Nome */}
         <div>
           <label className="block text-gray-700 font-semibold mb-1">Nome</label>
           <input
@@ -101,7 +97,6 @@ export default function EditarUsuarioPage() {
           />
         </div>
 
-        {/* CPF */}
         <div>
           <label className="block text-gray-700 font-semibold mb-1">CPF</label>
           <input
@@ -115,7 +110,6 @@ export default function EditarUsuarioPage() {
           />
         </div>
 
-        {/* Senha */}
         <div>
           <label className="block text-gray-700 font-semibold mb-1">
             Nova Senha
@@ -130,7 +124,6 @@ export default function EditarUsuarioPage() {
           />
         </div>
 
-        {/* Nível */}
         <div>
           <label className="block text-gray-700 font-semibold mb-1">
             Nível de Acesso
@@ -146,7 +139,6 @@ export default function EditarUsuarioPage() {
           </select>
         </div>
 
-        {/* Botões */}
         <div className="flex justify-between gap-3">
           <button
             type="button"

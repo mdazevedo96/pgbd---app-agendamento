@@ -10,13 +10,10 @@ export type Profissional = {
 export type AgendamentoPayload = {
   medicoId: number;
   usuarioId: number;
-  dataHora: string; // formato ISO
+  dataHora: string;
   servico: string;
 };
 
-// ==========================
-// 🔹 AUTH
-// ==========================
 export async function loginUser(cpf: string, senha: string) {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
@@ -29,12 +26,9 @@ export async function loginUser(cpf: string, senha: string) {
     throw new Error(data.message || "Erro ao fazer login");
   }
 
-  return res.json(); // { access_token, user }
+  return res.json();
 }
 
-// ==========================
-// 🔹 MÉDICOS
-// ==========================
 export async function getProfissionais(filtros?: {
   nome?: string;
   especialidade?: string;
@@ -59,9 +53,6 @@ export async function getProfissional(id: number): Promise<Profissional> {
   return res.json();
 }
 
-// ==========================
-// 🔹 AGENDAMENTOS
-// ==========================
 export async function createAgendamento(payload: AgendamentoPayload) {
   const token = localStorage.getItem("token");
 

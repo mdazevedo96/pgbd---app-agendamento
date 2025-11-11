@@ -20,7 +20,7 @@ import { HistoricoAgendamentosModule } from './historico-agendamentos/historico-
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       entities: [join(__dirname, '**', '*.entity.{ts,js}')],
-      synchronize: true,
+      synchronize: false,
       logging: true,
     }),
     MedicosModule,

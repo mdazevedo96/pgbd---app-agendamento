@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { HistoricoAgendamentosService } from './historico-agendamentos.service';
 import { HistoricoAgendamento } from './entities/historico-agendamento.entity';
 
@@ -12,7 +12,7 @@ export class HistoricoAgendamentosController {
   }
 
   @Get()
-  async findAll() {
-    return this.service.findAll();
+  async findAll(@Query('usuarioNome') usuarioNome?: string) {
+    return this.service.findAll(usuarioNome);
   }
 }

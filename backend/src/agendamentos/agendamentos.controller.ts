@@ -62,7 +62,6 @@ export class AgendamentosController {
     return this.agendamentosService.remove(id);
   }
 
-  // Nova rota PATCH para atualizar status
   @Patch(':id/status')
   async atualizarStatus(
     @Param('id') id: number,

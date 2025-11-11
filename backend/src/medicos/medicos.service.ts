@@ -32,12 +32,10 @@ export class MedicosService {
       where.crm = Like(`%${filters.crm}%`);
     }
 
-    // Se não houver filtros, retorna tudo
     if (Object.keys(where).length === 0) {
       return this.medicoRepository.find();
     }
 
-    // Se houver filtros, aplica todos os definidos (AND)
     return this.medicoRepository.find({ where });
   }
 

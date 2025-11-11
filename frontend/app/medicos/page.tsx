@@ -13,21 +13,17 @@ export default function HomePage() {
   const [user, setUser] = useState<{ nome: string; nivel: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Filtros
   const [nome, setNome] = useState("");
   const [especialidade, setEspecialidade] = useState("");
   const [crm, setCrm] = useState("");
 
-  // Controle do painel de filtros
   const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
-  // Carregar usuário do localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
-  // Buscar profissionais
   async function fetchProfissionais(filtros?: { nome?: string; especialidade?: string; crm?: string }) {
     try {
       setLoading(true);
@@ -44,7 +40,6 @@ export default function HomePage() {
     fetchProfissionais();
   }, []);
 
-  // Funções dos filtros
   const handleFiltrar = async () => {
     await fetchProfissionais({
       nome: nome || undefined,
@@ -60,7 +55,6 @@ export default function HomePage() {
     await fetchProfissionais();
   };
 
-  // Excluir profissional
   const handleDelete = async (id: number, nome: string) => {
     if (!confirm(`Tem certeza que deseja excluir o médico ${nome}?`)) return;
     try {
@@ -90,12 +84,10 @@ export default function HomePage() {
       subtitle="Encontre os melhores profissionais de forma rápida, fácil e online."
     >
       <div className="relative max-w-7xl mx-auto">
-        {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-4xl font-extrabold text-gray-800 tracking-tight">Médicos Disponíveis</h2>
 
           <div className="flex gap-4">
-            {/* Botão de filtro */}
             <button
               onClick={() => setFiltrosAbertos(prev => !prev)}
               className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-teal-400/40 hover:scale-110 transition-all duration-300"
@@ -104,7 +96,6 @@ export default function HomePage() {
               <FunnelIcon className="w-6 h-6" />
             </button>
 
-            {/* Botão "+" aparece somente para admins */}
             {user?.nivel === "admin" && (
               <Link
                 href="/medicos/novo"
@@ -117,7 +108,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Painel de filtros */}
         {filtrosAbertos && (
           <div className="bg-white p-6 rounded-xl shadow mb-8 border border-gray-100 transition-all">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
@@ -161,7 +151,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Listagem de médicos */}
         {profissionais.length === 0 ? (
           <p className="text-center text-gray-500 text-lg">
             Nenhum profissional disponível no momento.

@@ -32,7 +32,6 @@ export default function EditarMedicoPage() {
 
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Buscar dados do médico existente
   useEffect(() => {
     async function fetchMedico() {
       try {
@@ -80,7 +79,6 @@ export default function EditarMedicoPage() {
     }
   };
 
-  // 🔹 Atualizar médico
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -168,7 +166,6 @@ export default function EditarMedicoPage() {
           />
         </div>
 
-        {/* Horários disponíveis */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <label className="text-gray-700 font-semibold">

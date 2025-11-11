@@ -30,12 +30,12 @@ export class UsuariosService {
     const exists = await this.repo.findOneBy({ cpf: data.cpf });
     if (exists) throw new ConflictException('CPF já cadastrado');
 
-    const hashed = await bcrypt.hash(data.senha, 10);
+    // const hashed = await bcrypt.hash(data.senha, 10);
 
     const novo = this.repo.create({
       nome: data.nome,
       cpf: data.cpf,
-      senha: hashed,
+      senha: data.senha,
       nivel: data.nivel ?? NivelUsuario.PACIENTE,
     });
 

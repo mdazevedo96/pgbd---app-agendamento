@@ -15,7 +15,14 @@ export class HistoricoAgendamentosService {
     return this.historicoRepo.save(novo);
   }
 
-  async findAll() {
+  async findAll(usuarioNome?: string) {
+    if (usuarioNome) {
+      return this.historicoRepo.find({
+        where: { usuarioNome },
+        order: { dataHora: 'DESC' },
+      });
+    }
+
     return this.historicoRepo.find({
       order: { dataHora: 'DESC' },
     });

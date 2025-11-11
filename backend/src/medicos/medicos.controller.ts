@@ -22,7 +22,6 @@ export class MedicosController {
     return this.medicosService.create(createMedicoDto);
   }
 
-  // 🔎 Agora aceita filtros opcionais
   @Get()
   findAll(
     @Query('nome') nome?: string,
