@@ -1,10 +1,8 @@
-
-
 services:
   app:
     container_name: agendamentos-app
     build:
-      context: . 
+      context: ./frontend  # <-- CORRETO: Aponta para o frontend
       dockerfile: Dockerfile
     image: agendamentos-app:dev
     ports:
@@ -12,7 +10,7 @@ services:
     environment:
       NODE_ENV: development
     volumes:
-      - ./:/app
+      - ./frontend:/app   # <-- CORRETO: Mapeia o frontend
       - /app/node_modules
       - /app/.next
     networks:

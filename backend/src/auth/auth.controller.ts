@@ -8,8 +8,8 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  async login(@Body() body: { cpf: string; password: string }) {
-    const user = await this.authService.validateUser(body.cpf, body.password);
+  async login(@Body() body: { cpf: string; senha: string }) {
+    const user = await this.authService.validateUser(body.cpf, body.senha);
     return this.authService.login(user);
   }
 }

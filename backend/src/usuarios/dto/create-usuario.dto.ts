@@ -13,12 +13,8 @@ export class CreateUsuarioDto {
 
   @IsNotEmpty()
   @IsString()
-  identidade: string;
-
-  @IsNotEmpty()
-  @IsString()
   @MinLength(6, { message: 'Senha deve ter pelo menos 6 caracteres' })
-  password: string;
+  senha: string;
 
   @IsOptional()
   @IsEnum(NivelUsuario, { message: 'Nível deve ser admin ou paciente' })

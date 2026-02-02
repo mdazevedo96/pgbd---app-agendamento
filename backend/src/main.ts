@@ -15,7 +15,7 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  // app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   await app.listen(process.env.PORT || 3333);
   console.log(`🚀 Backend rodando em http://localhost:${process.env.PORT || 3333}`);

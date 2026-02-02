@@ -5,6 +5,9 @@ import { join } from 'path';
 import { MedicosModule } from './medicos/medicos.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AuthModule } from './auth/auth.module';
+import { AgendamentosModule } from './agendamentos/agendamentos.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { HistoricoAgendamentosModule } from './historico-agendamentos/historico-agendamentos.module';
 
 @Module({
   imports: [
@@ -17,11 +20,15 @@ import { AuthModule } from './auth/auth.module';
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
       entities: [join(__dirname, '**', '*.entity.{ts,js}')],
-      synchronize: true,
+      synchronize: false,
+      logging: true,
     }),
     MedicosModule,
+    ScheduleModule.forRoot(),
     UsuariosModule,
     AuthModule,
+    AgendamentosModule,
+    HistoricoAgendamentosModule,
   ],
 })
 export class AppModule { }

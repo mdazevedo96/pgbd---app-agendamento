@@ -1,37 +1,53 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Medico } from './entitites/medico.entity';
+import { Repository, Like, FindOptionsWhere } from 'typeorm';
+import { Medico } from './entities/medico.entity';
 import { CreateMedicoDto } from './dto/create-medico.dto';
 import { UpdateMedicoDto } from './dto/update-medico.dto';
 
 @Injectable()
 export class MedicosService {
-    constructor(
-        @InjectRepository(Medico)
-        private repo: Repository<Medico>,
-    ) { }
+  constructor(
+    @InjectRepository(Medico)
+    private readonly medicoRepository: Repository<Medico>,
+  ) {}
 
-    findAll() {
-        return this.repo.find();
+  create(createMedicoDto: CreateMedicoDto) {
+    const medico = this.medicoRepository.create(createMedicoDto);
+    return this.medicoRepository.save(medico);
+  }
+
+  async findAll(filters: { nome?: string; especialidade?: string; crm?: string }) {
+    const where: FindOptionsWhere<Medico> = {};
+
+    if (filters.nome && filters.nome.trim() !== '') {
+      where.nome = Like(`%${filters.nome}%`);
     }
 
-    findOne(id: number) {
-        return this.repo.findOneBy({ id });
+    if (filters.especialidade && filters.especialidade.trim() !== '') {
+      where.especialidade = Like(`%${filters.especialidade}%`);
     }
 
-    async create(data: CreateMedicoDto) {
-        const medico = this.repo.create(data);
-        return this.repo.save(medico);
+    if (filters.crm && filters.crm.trim() !== '') {
+      where.crm = Like(`%${filters.crm}%`);
     }
 
-    async update(id: number, data: UpdateMedicoDto) {
-        await this.repo.update(id, data);
-        return this.repo.findOneBy({ id });
+    if (Object.keys(where).length === 0) {
+      return this.medicoRepository.find();
     }
 
-    async remove(id: number) {
-        await this.repo.delete(id);
-        return { deleted: true };
-    }
+    return this.medicoRepository.find({ where });
+  }
+
+  findOne(id: number) {
+    return this.medicoRepository.findOneBy({ id });
+  }
+
+  update(id: number, updateMedicoDto: UpdateMedicoDto) {
+    return this.medicoRepository.update(id, updateMedicoDto);
+  }
+
+  remove(id: number) {
+    return this.medicoRepository.delete(id);
+  }
 }

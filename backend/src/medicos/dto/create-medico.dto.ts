@@ -1,15 +1,20 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsString, IsOptional, IsArray } from 'class-validator';
 
 export class CreateMedicoDto {
-  @IsNotEmpty()
   @IsString()
   nome: string;
 
-  @IsNotEmpty()
+  @IsString()
+  crm: string;
+
   @IsString()
   especialidade: string;
 
   @IsOptional()
   @IsString()
   fotoUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  horariosDisponiveis?: string[];
 }
